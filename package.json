@@ -1,0 +1,12 @@
+{
+  "name": "posurindo-website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "eleventy && node scripts/verify.mjs",
+    "dev": "eleventy --serve"
+  },
+  "devDependencies": {
+    "@11ty/eleventy": "^3.1.2"
+  }
+}
