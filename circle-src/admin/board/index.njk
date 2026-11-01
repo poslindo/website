@@ -1,0 +1,13 @@
+---
+layout: layouts/circle.njk
+title: 掲示板管理
+section: 管理
+permalink: /admin/board/
+---
+
+<p>Cloudflare Accessで認証した管理者専用です。投稿を削除してもデータは残り、「復元」で再公開できます。</p>
+<p id="admin-status" role="status" aria-live="polite">投稿を読み込み中…</p>
+<button type="button" id="admin-refresh">再読み込み</button>
+<p><a href="/board/">掲示板に戻る</a></p>
+<section id="admin-posts" aria-label="管理対象の投稿"></section>
+<script src="/admin-board.js" defer></script>
