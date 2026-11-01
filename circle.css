@@ -57,3 +57,19 @@ li { margin: 0.25em 0; }
   html { background: #fff; }
   body { margin: 0; padding: 1em; border: 0; }
 }
+
+/* 更新履歴・掲示板 */
+.update-list { padding-left: 1.5rem; }
+.update-list time { font-weight: bold; }
+.counter-box { text-align: center; }
+.counter-box strong { color: #b22222; font-size: 1.4em; }
+.notice { color: #b22222; font-weight: bold; }
+.board-form { display: grid; gap: .75rem; max-width: 42rem; }
+.board-form label { display: grid; gap: .25rem; }
+.board-form input, .board-form textarea { font: inherit; padding: .45rem; }
+.board-form textarea { min-height: 7rem; }
+.board-post { border-top: 1px dotted currentColor; padding: .75rem 0; }
+.board-post h3 { margin: 0; }
+.board-post time { font-size: .9em; }
+.contact-address { font-size: 1.2em; font-weight: bold; }
+.board-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }

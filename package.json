@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "build": "eleventy && node scripts/verify.mjs",
-    "dev": "eleventy --serve"
+    "dev": "npm run build && wrangler dev --port 8080",
+    "dev:static": "eleventy --serve"
   },
   "devDependencies": {
-    "@11ty/eleventy": "^3.1.2"
+    "@11ty/eleventy": "^3.1.2",
+    "wrangler": "^4.156.0"
   }
 }

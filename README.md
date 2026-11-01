@@ -13,6 +13,8 @@
 | イベント | `circle-src/event/` |
 | ぽすりん堂共通CSS | `circle.css` |
 | ぽす鈴ページ・CSS・画像 | `ramen-src/` |
+| 掲示板・カウンター処理 | `worker/index.js`、`circle-src/site.js` |
+| 連絡先 | `circle-src/contact/index.njk` |
 | Workers設定 | `wrangler.jsonc` |
 | 編集・公開手順 | `docs/DEPLOY.md` |
 

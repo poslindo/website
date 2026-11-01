@@ -11,6 +11,8 @@
 | 案内・メンバー・イベント | `circle-src/about/`、`circle-src/member/`、`circle-src/event/` |
 | ぽすりん堂のCSS | `circle.css` |
 | ぽす鈴のページ・CSS・画像 | `ramen-src/` |
+| 掲示板・カウンター処理 | `worker/index.js`、`circle-src/site.js` |
+| 連絡先 | `circle-src/contact/index.njk` |
 | Cloudflare Workers設定 | `wrangler.jsonc` |
 
 `.njk` の先頭の `---` で囲まれた部分はページ設定です。公開URLを変えるとき以外は残します。CSSや写真を変更したら、HTML/CSS内のファイル名と保存名が一致することを確認します。

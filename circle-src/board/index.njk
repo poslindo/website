@@ -1,0 +1,17 @@
+---
+layout: layouts/circle.njk
+title: 掲示板
+section: 掲示板
+permalink: /board/
+---
+
+<p>お気軽に書き込んでください。投稿は新しいものから50件表示されます。</p>
+<form id="board-form" class="board-form">
+  <label>お名前 <input name="name" maxlength="40" required></label>
+  <label>本文 <textarea name="message" maxlength="500" required></textarea></label>
+  <label class="board-honeypot" aria-hidden="true" tabindex="-1">Website <input name="website" tabindex="-1" autocomplete="off"></label>
+  <button type="submit">投稿する</button>
+</form>
+<p id="board-status" aria-live="polite"></p>
+<section id="board-posts" aria-label="投稿一覧"></section>
+<script src="/site.js" defer></script>

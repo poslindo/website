@@ -1,6 +1,7 @@
 // ぽすりん堂の各ページと、ぽす鈴の静的サイトをまとめて出力する。
 export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("circle.css");
+  eleventyConfig.addPassthroughCopy("circle-src/site.js");
   eleventyConfig.addPassthroughCopy({ "ramen-src": "ramen" });
 
   return {
