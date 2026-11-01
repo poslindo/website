@@ -29,6 +29,10 @@ const noStore = response => {
 };
 const contentCategories = new Set(["about", "event", "member", "document"]);
 const contentFilename = value => typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value !== "index";
+async function githubErrorMessage(response) {
+  const error = await response.json().catch(() => ({}));
+  return typeof error.message === "string" ? error.message.slice(0, 300) : "詳細は取得できませんでした。";
+}
 const githubHeaders = token => ({
   "Authorization": `Bearer ${token}`,
   "Accept": "application/vnd.github+json",
@@ -54,7 +58,7 @@ async function contentApi(request, env, url) {
   const path = `circle-src/${selectedCategory}`;
   if (request.method === "GET" && !url.searchParams.has("filename")) {
     const response = await fetch(`${api}${path}?ref=${encodeURIComponent(branch)}`, { headers });
-    if (!response.ok) return json({ error: `GitHubから記事一覧を取得できませんでした（HTTP ${response.status}）。` }, response.status === 404 ? 404 : 502);
+    if (!response.ok) return json({ error: `GitHubから記事一覧を取得できませんでした（HTTP ${response.status}: ${await githubErrorMessage(response)}）。` }, response.status === 404 ? 404 : 502);
     const files = (await response.json()).filter(item => item.type === "file" && item.name.endsWith(".md"))
       .map(item => item.name.slice(0, -3)).filter(contentFilename);
     return json({ files });
@@ -63,7 +67,7 @@ async function contentApi(request, env, url) {
     const name = url.searchParams.get("filename");
     if (!contentFilename(name)) return json({ error: "ファイル名が正しくありません。" }, 400);
     const response = await fetch(`${api}${path}/${name}.md?ref=${encodeURIComponent(branch)}`, { headers });
-    if (!response.ok) return json({ error: `GitHubから記事を読み込めませんでした（HTTP ${response.status}）。` }, response.status === 404 ? 404 : 502);
+    if (!response.ok) return json({ error: `GitHubから記事を読み込めませんでした（HTTP ${response.status}: ${await githubErrorMessage(response)}）。` }, response.status === 404 ? 404 : 502);
     const file = await response.json();
     const source = new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\s/g, "")), char => char.charCodeAt(0)));
     return json({ filename: name, title: decodeArticleTitle(source) || name, body: stripArticleTitle(source) });
@@ -77,11 +81,11 @@ async function contentApi(request, env, url) {
     const filePath = `${path}/${name}.md`;
     const route = await fetch(`${api}${path}/${name}?ref=${encodeURIComponent(branch)}`, { headers });
     if (route.ok) return json({ error: "同じURLになるフォルダーがすでにあります。別のファイル名を選んでください。" }, 409);
-    if (route.status !== 404) return json({ error: "記事URLの重複を確認できませんでした。" }, 502);
+    if (route.status !== 404) return json({ error: `記事URLの重複を確認できませんでした（HTTP ${route.status}: ${await githubErrorMessage(route)}）。` }, 502);
     const existing = await fetch(`${api}${filePath}?ref=${encodeURIComponent(branch)}`, { headers });
     let sha;
     if (existing.ok) sha = (await existing.json()).sha;
-    else if (existing.status !== 404) return json({ error: "既存記事を確認できませんでした。" }, 502);
+    else if (existing.status !== 404) return json({ error: `既存記事を確認できませんでした（HTTP ${existing.status}: ${await githubErrorMessage(existing)}）。` }, 502);
     const bytes = new TextEncoder().encode(content);
     let binary = "";
     for (const byte of bytes) binary += String.fromCharCode(byte);
@@ -90,7 +94,7 @@ async function contentApi(request, env, url) {
       headers: { ...headers, "Content-Type": "application/json" },
       body: JSON.stringify({ message: `記事を更新: ${name}`, content: btoa(binary), branch, ...(sha ? { sha } : {}) }),
     });
-    if (!saved.ok) return json({ error: `GitHubへの保存に失敗しました（HTTP ${saved.status}）。権限と設定を確認してください。` }, 502);
+    if (!saved.ok) return json({ error: `GitHubへの保存に失敗しました（HTTP ${saved.status}: ${await githubErrorMessage(saved)}）。` }, 502);
     return json({ ok: true, url: `/${selectedCategory}/${name}/` });
   }
   return json({ error: "Method not allowed" }, 405);
