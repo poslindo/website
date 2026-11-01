@@ -1,0 +1,25 @@
+name: Board security checks
+on:
+  pull_request:
+    paths:
+      - "worker/**"
+      - "circle-src/**"
+      - "wrangler.jsonc"
+      - "package*.json"
+      - ".github/workflows/board-security.yml"
+  push:
+    branches:
+      - "security/board-hardening-20261101"
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+      - run: npm ci
+      - run: node --check worker/index.js
+      - run: npm run build
+      - run: npx wrangler deploy --dry-run
