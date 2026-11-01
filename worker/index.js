@@ -70,13 +70,14 @@ export default {
       headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
       headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
       headers.set("X-Frame-Options", "DENY");
+      const ramenPage = url.pathname === "/ramen" || url.pathname.startsWith("/ramen/");
       headers.set("Content-Security-Policy", [
         "default-src 'self'",
         "base-uri 'self'",
         "object-src 'none'",
         "frame-ancestors 'none'",
         "form-action 'self'",
-        "script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+        "script-src 'self'" + (ramenPage ? " 'unsafe-inline'" : "") + " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
         "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/",
         "connect-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
         "style-src 'self' 'unsafe-inline'",
