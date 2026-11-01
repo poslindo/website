@@ -19,8 +19,9 @@ async function setupRecaptcha() {
   const statusTarget = form ? status : contactStatus;
   try {
     const configResponse = await fetch("/api/recaptcha/config");
-    const { siteKey } = await configResponse.json();
-    if (!configResponse.ok || !siteKey) throw new Error("reCAPTCHAの設定がありません。");
+    const { siteKey, ready } = await configResponse.json();
+    if (!configResponse.ok || !siteKey) throw new Error("reCAPTCHAのサイトキーが設定されていません。");
+    if (!ready) throw new Error("reCAPTCHAのシークレットキーが設定されていません。");
     recaptchaSiteKey = siteKey;
     if (!window.grecaptcha) await new Promise((resolve, reject) => {
       const script = document.createElement("script");

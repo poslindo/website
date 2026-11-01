@@ -44,8 +44,10 @@ export class SiteState extends DurableObject {
   async fetch(request) {
     const url = new URL(request.url);
     if (url.pathname === "/api/recaptcha/config" && request.method === "GET") {
-      const configured = this.env.RECAPTCHA_SITE_KEY && this.env.RECAPTCHA_SECRET_KEY;
-      return json({ siteKey: configured ? this.env.RECAPTCHA_SITE_KEY : null });
+      return json({
+        siteKey: this.env.RECAPTCHA_SITE_KEY || null,
+        ready: Boolean(this.env.RECAPTCHA_SECRET_KEY),
+      });
     }
     if (url.pathname === "/api/contact/verify" && request.method === "POST") {
       if (request.headers.get("Origin") !== url.origin) return json({ error: "不正な送信元です。" }, 403);
