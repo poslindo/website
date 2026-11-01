@@ -27,6 +27,35 @@ async function load() {
       time.textContent = new Date(post.createdAt).toLocaleString("ja-JP");
       const body = document.createElement("p");
       body.textContent = post.message;
+      const metadata = (() => {
+        try {
+          const value = JSON.parse(post.requestMetadata || "{}");
+          return value && typeof value === "object" && !Array.isArray(value) ? value : {};
+        } catch { return {}; }
+      })();
+      const connection = document.createElement("dl");
+      connection.className = "small";
+      const location = [metadata.country, metadata.region, metadata.city].filter(Boolean).join(" / ");
+      const network = metadata.asOrganization ? `${metadata.asOrganization}${metadata.asn ? ` (AS${metadata.asn})` : ""}` : metadata.asn ? `AS${metadata.asn}` : "";
+      for (const [label, value] of [
+        ["投稿時IP", post.ipAddress],
+        ["推定地域", location],
+        ["ASN登録組織", network],
+        ["User-Agent", metadata.userAgent],
+        ["ブラウザー情報", [metadata.clientHints?.brands, metadata.clientHints?.platform, metadata.clientHints?.mobile].filter(Boolean).join(" / ")],
+        ["言語設定", metadata.acceptLanguage],
+        ["画面サイズ", metadata.screenWidth && metadata.screenHeight ? `${metadata.screenWidth} × ${metadata.screenHeight}` : ""],
+        ["表示領域", metadata.viewportWidth && metadata.viewportHeight ? `${metadata.viewportWidth} × ${metadata.viewportHeight}` : ""],
+        ["表示倍率", metadata.devicePixelRatio],
+        ["タイムゾーン", metadata.timezone],
+        ["Cloudflare Ray ID", metadata.cfRay],
+      ]) {
+        const term = document.createElement("dt");
+        term.textContent = label;
+        const detail = document.createElement("dd");
+        detail.textContent = value ?? "不明";
+        connection.append(term, detail);
+      }
       const button = document.createElement("button");
       button.type = "button";
       button.textContent = post.hidden ? "復元して再公開" : "削除（非公開にする）";
@@ -47,7 +76,7 @@ async function load() {
           button.disabled = false;
         }
       });
-      article.append(title, time, body, button);
+      article.append(title, time, body, connection, button);
       list.append(article);
     }
     status.textContent = posts.length + "件の投稿があります。";

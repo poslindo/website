@@ -13,7 +13,7 @@ const sameSecret = async (received, configured) => {
   return difference === 0;
 };
 async function clientKey(request, env) {
-  // Do not persist raw IP addresses. The salt must be a Cloudflare secret.
+  // Rate-limit records use hashes; the salt must be a Cloudflare secret.
   if (!env.RATE_LIMIT_SALT) throw new Error("RATE_LIMIT_SALT is missing");
   const ip = request.headers.get("CF-Connecting-IP") || "unknown";
   const digest = await crypto.subtle.digest("SHA-256", encoder.encode(env.RATE_LIMIT_SALT + ":" + ip));
@@ -148,9 +148,12 @@ export class SiteState extends DurableObject {
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS board_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL);`);
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS rate_events (subject TEXT NOT NULL, kind TEXT NOT NULL, created_ms INTEGER NOT NULL);`);
     ctx.storage.sql.exec(`CREATE INDEX IF NOT EXISTS rate_events_lookup ON rate_events(subject, kind, created_ms);`);
-    // Idempotent migration for databases created before moderation support.
+    // Idempotent migrations for moderation and post connection metadata.
     const columns = ctx.storage.sql.exec(`PRAGMA table_info(board_posts)`).toArray().map(c => c.name);
     if (!columns.includes("hidden")) ctx.storage.sql.exec(`ALTER TABLE board_posts ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0`);
+    for (const [name, type] of [["ip_address", "TEXT"], ["request_metadata", "TEXT"]]) {
+      if (!columns.includes(name)) ctx.storage.sql.exec(`ALTER TABLE board_posts ADD COLUMN ${name} ${type}`);
+    }
   }
 
   async limited(request, kind, maxCount, windowMs, minGapMs = 0) {
@@ -187,7 +190,8 @@ export class SiteState extends DurableObject {
       version: 1,
       exportedAt: new Date().toISOString(),
       posts: this.ctx.storage.sql.exec(
-        `SELECT id, name, message, created_at AS createdAt, hidden FROM board_posts ORDER BY id`
+        `SELECT id, name, message, created_at AS createdAt, hidden, ip_address AS ipAddress,
+          request_metadata AS requestMetadata FROM board_posts ORDER BY id`
       ).toArray()
     };
   }
@@ -228,14 +232,18 @@ export class SiteState extends DurableObject {
             typeof p.name === "string" && p.name.length <= 40 &&
             typeof p.message === "string" && p.message.length <= 500 &&
             typeof p.createdAt === "string" && p.createdAt.length <= 40 &&
-            (p.hidden === 0 || p.hidden === 1)))
+            (p.hidden === 0 || p.hidden === 1) &&
+            (p.ipAddress == null || typeof p.ipAddress === "string") &&
+            (p.requestMetadata == null || typeof p.requestMetadata === "string" && p.requestMetadata.length <= 4096)))
           return json({ error: "Invalid backup schema" }, 400);
         let restored = 0;
         this.ctx.storage.transactionSync(() => {
           for (const p of data.posts) {
             const result = this.ctx.storage.sql.exec(
-              `INSERT OR IGNORE INTO board_posts (id, name, message, created_at, hidden) VALUES (?, ?, ?, ?, ?) RETURNING id`,
-              p.id, p.name, p.message, p.createdAt, p.hidden
+              `INSERT OR IGNORE INTO board_posts (id, name, message, created_at, hidden, ip_address, request_metadata)
+                VALUES (?, ?, ?, ?, ?, ?, ?) RETURNING id`,
+              p.id, p.name, p.message, p.createdAt, p.hidden,
+              p.ipAddress ?? null, p.requestMetadata ?? null
             ).toArray();
             restored += result.length;
           }
@@ -302,7 +310,36 @@ export class SiteState extends DurableObject {
         if (await this.limited(request, "board", 5, LIMIT_WINDOW_MS, 30_000))
           return json({ error: "投稿頻度が高すぎます。時間をおいてください。" }, 429);
       } catch { return json({ error: "Rate limit not configured" }, 503); }
-      this.ctx.storage.sql.exec(`INSERT INTO board_posts (name, message, created_at) VALUES (?, ?, ?)`, name, message, new Date().toISOString());
+      const cf = request.cf || {};
+      const clientInfo = body.screenInfo && typeof body.screenInfo === "object" && !Array.isArray(body.screenInfo) ? body.screenInfo : {};
+      const validDimension = value => Number.isSafeInteger(value) && value > 0 && value <= 32768 ? value : null;
+      const metadata = {
+        country: cf.country || null,
+        region: cf.region || null,
+        city: cf.city || null,
+        asn: Number.isSafeInteger(cf.asn) ? cf.asn : null,
+        asOrganization: cf.asOrganization || null,
+        cfRay: request.headers.get("CF-Ray")?.slice(0, 128) || null,
+        userAgent: request.headers.get("User-Agent")?.slice(0, 512) || null,
+        clientHints: {
+          brands: request.headers.get("Sec-CH-UA")?.slice(0, 512) || null,
+          platform: request.headers.get("Sec-CH-UA-Platform")?.slice(0, 128) || null,
+          mobile: request.headers.get("Sec-CH-UA-Mobile")?.slice(0, 16) || null,
+        },
+        acceptLanguage: request.headers.get("Accept-Language")?.slice(0, 256) || null,
+        screenWidth: validDimension(clientInfo.screenWidth),
+        screenHeight: validDimension(clientInfo.screenHeight),
+        viewportWidth: validDimension(clientInfo.viewportWidth),
+        viewportHeight: validDimension(clientInfo.viewportHeight),
+        devicePixelRatio: Number.isFinite(clientInfo.devicePixelRatio) && clientInfo.devicePixelRatio > 0 && clientInfo.devicePixelRatio <= 10 ? clientInfo.devicePixelRatio : null,
+        timezone: typeof clientInfo.timezone === "string" ? clientInfo.timezone.slice(0, 100) : null,
+      };
+      this.ctx.storage.sql.exec(
+        `INSERT INTO board_posts (name, message, created_at, ip_address, request_metadata)
+          VALUES (?, ?, ?, ?, ?)`,
+        name, message, new Date().toISOString(), request.headers.get("CF-Connecting-IP"),
+        JSON.stringify(metadata)
+      );
       return json({ ok: true }, 201);
     }
     return json({ error: "Not found" }, 404);

@@ -85,7 +85,15 @@ if (form) form.addEventListener("submit", async event => {
   const fields = new FormData(form);
   try {
     const token = await getRecaptchaToken("board_post");
-    const response = await fetch("/api/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fields.get("name"), message: fields.get("message"), website: fields.get("website"), token }) });
+    const screenInfo = {
+      screenWidth: screen.width,
+      screenHeight: screen.height,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      devicePixelRatio: window.devicePixelRatio,
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    };
+    const response = await fetch("/api/board", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ name: fields.get("name"), message: fields.get("message"), website: fields.get("website"), screenInfo, token }) });
     const result = await response.json();
     if (!response.ok) throw new Error(result.error || "投稿に失敗しました。");
     form.reset(); status.textContent = "投稿しました。"; await loadPosts();

@@ -6,8 +6,9 @@ permalink: /board/
 ---
 
 <p>お気軽に書き込んでください。投稿は新しいものから50件表示されます。</p>
+
 <form id="board-form" class="board-form">
-  <label>お名前（空欄は名無しさん） <input name="name" maxlength="40"></label>
+  <label> なまえ(空欄可)<input name="name" maxlength="40"></label>
   <label>本文 <textarea name="message" maxlength="500" required></textarea></label>
   <label class="board-honeypot" aria-hidden="true" tabindex="-1">Website <input name="website" tabindex="-1" autocomplete="off"></label>
   <button type="submit" disabled>投稿する</button>
@@ -15,3 +16,4 @@ permalink: /board/
 <p id="board-status" aria-live="polite"></p>
 <section id="board-posts" aria-label="投稿一覧"></section>
 <script src="/site.js" defer></script>
+<p class="small">迷惑投稿や不正・犯罪等への対応のため、投稿時のIPアドレス、推定地域・ネットワーク情報、User-Agent、言語設定、画面・表示領域サイズ、表示倍率、タイムゾーン、CloudflareのリクエストIDを保存します。これらは管理者だけが確認でき、投稿データと一緒に保管されます。</p>
