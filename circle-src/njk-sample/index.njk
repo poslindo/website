@@ -1,0 +1,83 @@
+---
+layout: layouts/circle.njk
+title: Nunjucks サンプル
+section: 制作メモ
+permalink: /njk-sample/
+backUrl: /
+backLabel: トップに戻る
+showNote: true
+note: この文章は front matter で設定しています。
+links:
+  - label: 案内ページ
+    url: /about/
+  - label: 構成員一覧
+    url: /member/
+---
+
+<p>このページは、よく使う Nunjucks の書き方を試しながら確認できるサンプルです。</p>
+<p>説明の下にあるコードをコピーして、自分のページに合わせて書き換えてください。</p>
+
+<h2>1. まずはページを作る</h2>
+<p><code>circle-src/好きな名前/index.njk</code> を作り、次の front matter を先頭に置きます。<code>permalink</code> が公開URLです。</p>
+<pre><code>{% raw %}---
+layout: layouts/circle.njk
+title: ページのタイトル
+section: メニューに出す分類
+permalink: /好きなURL/
+backUrl: /
+backLabel: トップに戻る
+---
+
+&lt;p&gt;ここから本文を書きます。&lt;/p&gt;{% endraw %}</code></pre>
+
+<h2>2. 変数を表示する</h2>
+<p>front matter に書いた値は、波かっこ2つで本文に表示できます。たとえば、このページのタイトルは「{{ title }}」です。</p>
+<pre><code>{% raw %}&lt;h1&gt;{{ title }}&lt;/h1&gt;
+&lt;p&gt;{{ note }}&lt;/p&gt;{% endraw %}</code></pre>
+
+<h2>3. 条件で表示を切り替える</h2>
+{% if showNote %}
+<p class="box">{{ note }}</p>
+{% endif %}
+<pre><code>{% raw %}{% if showNote %}
+  &lt;p class="box"&gt;{{ note }}&lt;/p&gt;
+{% endif %}{% endraw %}</code></pre>
+<p>front matter の <code>showNote: true</code> を <code>false</code> にすると、上の囲みは表示されません。</p>
+
+<h2>4. リストを繰り返し表示する</h2>
+<p>front matter の <code>links</code> に登録した項目から、リンク一覧を作っています。</p>
+<ul>
+  {% for link in links %}
+  <li><a href="{{ link.url }}">{{ link.label }}</a>（{{ loop.index }}件目）</li>
+  {% endfor %}
+</ul>
+<pre><code>{% raw %}{% for link in links %}
+  &lt;li&gt;&lt;a href="{{ link.url }}"&gt;{{ link.label }}&lt;/a&gt;&lt;/li&gt;
+{% endfor %}{% endraw %}</code></pre>
+<pre><code>{% raw %}links:
+  - label: 案内ページ
+    url: /about/
+  - label: 構成員一覧
+    url: /member/{% endraw %}</code></pre>
+
+<h2>5. フィルターを使う</h2>
+<p>値の後ろに <code>|</code> とフィルター名を書くと、表示を整えられます。</p>
+<pre><code>{% raw %}{{ "hello" | upper }}
+{{ "WELCOME" | lower }}
+{{ links | length }}{% endraw %}</code></pre>
+<p>上から大文字、小文字、リストの件数を表示します。</p>
+
+<h2>6. 部品を読み込む・コメントを書く</h2>
+<p>共通部品は <code>include</code> で読み込めます。ページには出したくないメモはコメントにします。</p>
+<pre><code>{% raw %}{% include "partials/nav.njk" %}
+
+{# このコメントは公開ページに表示されません #}{% endraw %}</code></pre>
+
+<h2>記号の早見表</h2>
+<ul>
+  <li><code>{{ 値 }}</code>：値を表示する</li>
+  <li><code>{% 命令 %}</code>：条件分岐や繰り返しなどを行う</li>
+  <li><code>{# コメント #}</code>：テンプレート内だけのメモ</li>
+</ul>
+
+<p class="box">本文はHTMLで書けます。タイトルや説明など、ページごとに変わる値はfront matterに置くと編集しやすくなります。</p>
