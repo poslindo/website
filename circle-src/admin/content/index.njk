@@ -32,6 +32,8 @@ backLabel: 掲示板管理へ
           <button type="button" data-insert="link">リンク</button>
           <button type="button" data-insert="image">画像</button>
           <button type="button" data-insert="ruby">ルビ</button>
+          <button type="button" data-insert="center">中央揃え</button>
+          <button type="button" data-insert="right">右揃え</button>
           <button type="button" data-insert="indent">字下げ</button>
         </div>
         <label class="content-body-label">本文（でんでんマークダウン）
@@ -63,7 +65,7 @@ backLabel: 掲示板管理へ
     </details>
     <details class="content-help">
       <summary>Markdownヘルプとサンプル</summary>
-      <p>本文にYAML設定は不要です。ルビは <code>{漢字|かんじ}</code>、画像は <code>![説明](https://...)</code> で書けます。行頭の全角スペースは字下げとして残ります。</p>
+      <p>本文にYAML設定は不要です。ルビは <code>{漢字|かんじ}</code>、画像は <code>![説明](https://...)</code> で書けます。行頭の全角スペースは字下げとして残ります。中央揃えと右揃えは、ツールバーでブロックを挿入できます。</p>
       <p><button type="button" id="content-use-sample">サンプルを本文に入れる</button> <a href="/markdown-editor-sample.md.txt" download>サンプルファイルをダウンロード</a></p>
       <pre id="content-sample-source">サンプルを読み込み中…</pre>
     </details>

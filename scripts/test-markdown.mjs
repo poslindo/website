@@ -11,6 +11,9 @@ assert.match(markdown.render("`{文字|もじ}`"), /<code>\{文字\|もじ\}<\/c
 assert.match(markdown.render("![写真](https://example.com/photo.jpg)"), /<img src="https:\/\/example.com\/photo.jpg" alt="写真">/);
 assert.doesNotMatch(markdown.render("<script>alert(1)</script>"), /<script>/);
 assert.match(markdown.render("　字下げした段落"), /<p>　字下げした段落<\/p>/);
+assert.match(markdown.render(":::center\nお知らせ\n:::"), /<div class="text-center">\s*<p>お知らせ<\/p>\s*<\/div>/);
+assert.match(markdown.render(":::right\n令和8年11月2日\n:::"), /<div class="text-right">\s*<p>令和8年11月2日<\/p>\s*<\/div>/);
+assert.doesNotMatch(markdown.render(":::center\nお知らせ\n:::"), /:::center|:::/);
 const titleMetadata = `<!-- article-title: ${encodeArticleTitle("編集画面のタイトル")} -->`;
 assert.equal(decodeArticleTitle(titleMetadata), "編集画面のタイトル");
 const titled = `${titleMetadata}\n\n# 本文の見出し\n\n# もうひとつの見出し`;
@@ -22,3 +25,5 @@ const sampleSource = readFileSync("circle-src/markdown-editor-sample.md.txt", "u
 const sampleHtml = markdown.render(sampleSource);
 assert.match(sampleHtml, /<ruby>京都<rt>きょうと<\/rt><\/ruby>/);
 assert.match(sampleHtml, /<img src="\/ramen\/ramen-hero.jpg" alt="中華そばの写真">/);
+assert.match(sampleHtml, /<div class="text-center">\s*<p>お知らせ<\/p>\s*<\/div>/);
+assert.match(sampleHtml, /<div class="text-right">\s*<p>2026年11月2日<\/p>\s*<\/div>/);

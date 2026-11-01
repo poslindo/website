@@ -43,6 +43,8 @@ h5 { margin: 1.3em 0 0.45em; font-size: 1em; text-decoration: underline; text-de
 h6 { margin: 1.3em 0 0.45em; color: #515c64; font-size: 1em; letter-spacing: 0.04em; }
 
 hr { border: 0; border-top: 1px dashed #aaa; margin: 1.4em 0; }
+.text-center { text-align: center; }
+.text-right { text-align: right; }
 ul { padding-left: 1.7em; }
 li { margin: 0.25em 0; }
 .small { font-size: 0.85em; color: #666; }

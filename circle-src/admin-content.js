@@ -236,6 +236,7 @@ document.querySelector(".content-markdown-toolbar").addEventListener("click", ev
   if (action === "link") insertText("[", "](https://)", "リンク文字列");
   if (action === "image") insertText("![", "](https://)", "画像の説明");
   if (action === "ruby") insertText("{", "|よみ}", "漢字");
+  if (action === "center" || action === "right") insertText(`:::${action}\n`, "\n:::", "ここに文章を書く");
   if (action === "indent") {
     const start = body.selectionStart;
     const end = body.selectionEnd;

@@ -30,11 +30,41 @@ function dendenRuby(markdown) {
   };
 }
 
+function dendenAlignment(markdown) {
+  markdown.block.ruler.before("paragraph", "denden_alignment", (state, startLine, endLine, silent) => {
+    const start = state.bMarks[startLine] + state.tShift[startLine];
+    const open = /^:::(center|right)\s*$/.exec(state.src.slice(start, state.eMarks[startLine]));
+    if (!open || state.sCount[startLine] - state.blkIndent >= 4) return false;
+    if (silent) return true;
+
+    let end = startLine + 1;
+    for (; end < endLine; end++) {
+      const line = state.bMarks[end] + state.tShift[end];
+      if (/^:::\s*$/.test(state.src.slice(line, state.eMarks[end]))) break;
+    }
+    if (end === endLine) return false;
+
+    const token = state.push("denden_alignment", "div", 0);
+    token.meta = { alignment: open[1] };
+    token.content = state.getLines(startLine + 1, end, state.blkIndent, false);
+    token.map = [startLine, end + 1];
+    token.block = true;
+    state.line = end + 1;
+    return true;
+  });
+
+  markdown.renderer.rules.denden_alignment = (tokens, index) => {
+    const token = tokens[index];
+    return `<div class="text-${token.meta.alignment}">\n${markdown.render(token.content)}</div>\n`;
+  };
+}
+
 export function createMarkdown() {
   const markdown = new MarkdownIt({ html: false, breaks: true, linkify: true });
   markdown.core.ruler.before("block", "article_title_metadata", state => {
     state.src = state.src.replace(/^<!-- article-title: [A-Za-z0-9+/=]+ -->(?:\r?\n)+/, "");
   });
   dendenRuby(markdown);
+  dendenAlignment(markdown);
   return markdown;
 }
