@@ -1,9 +1,30 @@
 const count = document.querySelector("#visit-count");
 const kiriban = document.querySelector("#kiriban-message");
-if (count) fetch("/api/counter", { method: "POST" }).then(r => r.json()).then(data => {
-  count.textContent = data.count.toLocaleString("ja-JP");
-  if (data.kiriban) kiriban.textContent = `キリ番 ${data.count.toLocaleString("ja-JP")} 番を踏みました！`;
-}).catch(() => { count.textContent = "集計中"; });
+if (count) {
+  const storageKey = "posurindo-counter-last-visit";
+  const now = Date.now();
+  const oneDay = 24 * 60 * 60 * 1000;
+  let countedRecently = false;
+  let storageAvailable = true;
+  try {
+    const previous = Number(localStorage.getItem(storageKey));
+    countedRecently = previous > 0 && now >= previous && now - previous < oneDay;
+    if (!countedRecently) localStorage.setItem(storageKey, String(now));
+  } catch { storageAvailable = false; }
+
+  fetch("/api/counter", { method: countedRecently ? "GET" : "POST" }).then(response => {
+    if (!response.ok) throw new Error("Counter request failed");
+    return response.json();
+  }).then(data => {
+    count.textContent = data.count.toLocaleString("ja-JP");
+    if (data.kiriban) kiriban.textContent = `キリ番 ${data.count.toLocaleString("ja-JP")} 番を踏みました！`;
+  }).catch(() => {
+    if (!countedRecently && storageAvailable) {
+      try { if (localStorage.getItem(storageKey) === String(now)) localStorage.removeItem(storageKey); } catch {}
+    }
+    count.textContent = "集計中";
+  });
+}
 
 const form = document.querySelector("#board-form");
 const list = document.querySelector("#board-posts");

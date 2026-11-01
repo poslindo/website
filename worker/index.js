@@ -61,6 +61,10 @@ export class SiteState extends DurableObject {
       const error = await verifyRecaptcha(body?.token, "contact_reveal", request, this.env);
       return error || json({ email: emailAddress });
     }
+    if (url.pathname === "/api/counter" && request.method === "GET") {
+      const row = this.ctx.storage.sql.exec(`SELECT value FROM site_counter WHERE id = 1`).one();
+      return json({ count: row.value });
+    }
     if (url.pathname === "/api/counter" && request.method === "POST") {
       const row = this.ctx.storage.sql.exec(`UPDATE site_counter SET value = value + 1 WHERE id = 1 RETURNING value`).one();
       return json({ count: row.value, kiriban: row.value % 1000 === 0 });
