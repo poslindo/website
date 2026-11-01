@@ -1,48 +1,39 @@
-# 中華そば ぽす鈴 / ぽすりん堂
+# ぽすりん堂 / 中華そば ぽす鈴
 
-中華そば「ぽす鈴」のトップページは、リポジトリ直下のHTML・CSS・写真を**そのまま公開**します。
-
-同人サークル「ぽすりん堂」の `/about/`、`/member/`、`/event/` 以下は **Eleventy (11ty)** で生成します。完成したページは普通の軽量なHTMLです。ブラウザ側のJavaScriptは不要です。
+トップページ（`/`）は同人サークル「ぽすりん堂」、中華そば「ぽす鈴」は `/ramen/` で公開します。
 
 ## 編集する場所
 
 | 内容 | ファイル |
 | --- | --- |
-| サイト共通レイアウト | `circle-src/_includes/layouts/circle.njk` |
-| 共通メニュー | `circle-src/_includes/partials/nav.njk` |
-| フッター | `circle-src/_includes/partials/footer.njk` |
-| 共通デザイン | `circle.css` |
-| 会社概要 | `circle-src/about/index.njk` |
-| YUUU | `circle-src/member/YUUU/index.njk` |
-| IYA | `circle-src/member/IYA/index.njk` |
+| ぽすりん堂トップ | `circle-src/index.njk` |
+| 共通レイアウト・メニュー | `circle-src/_includes/` |
+| 案内 | `circle-src/about/index.njk` |
+| メンバー | `circle-src/member/` |
 | イベント | `circle-src/event/` |
+| ぽすりん堂共通CSS | `circle.css` |
+| ぽす鈴ページ・CSS・画像 | `ramen-src/` |
+| Workers設定 | `wrangler.jsonc` |
+| 編集・公開手順 | `docs/DEPLOY.md` |
 
-個人ページの `.njk` では、先頭の `---` で囲まれた設定を残し、その下のHTMLを編集してください。
+`.njk` の先頭にある `---` から `---` までのページ設定は残してください。
 
-## ローカルで確認する
-
-Node.jsをインストールした環境で以下を実行します。
+## ローカル確認
 
 ```sh
 npm ci
 npm run dev
 ```
 
-本番用の出力と検査：
+本番用ビルドとリンク検査は `npm run build` です。公開用ファイルは `_site/` に生成されます。`_site/` は直接編集しません。
 
-```sh
-npm run build
-```
+## Cloudflare Workers Builds
 
-`_site/` に公開ファイルが生成されます。`npm run build` はリンク切れとぽす鈴トップページの無変更も検査します。
-
-## Cloudflare Pages
-
-- リポジトリ：`poslindo/website`
 - Production branch：`main`
-- Framework preset：`Eleventy`（または `None`）
 - Build command：`npm run build`
-- Build output directory：`_site`
-- Root directory：リポジトリ直下
+- Deploy command：`npx wrangler deploy`
+- Preview command：`npx wrangler preview`
+- Root directory：`/`
+- 静的ファイル：`wrangler.jsonc` の `assets.directory` で `./_site` を指定
 
-Eleventyで生成するのは同人サイトのページだけです。ぽす鈴のHTMLはビルド時にそのままコピーします。
+`main` へのマージ後に本番デプロイ、作業ブランチやPRではプレビューが実行されます。詳細は [docs/DEPLOY.md](docs/DEPLOY.md) を参照してください。

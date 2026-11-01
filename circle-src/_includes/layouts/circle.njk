@@ -8,22 +8,13 @@
 </head>
 <body>
 
-<p>
-  <a href="/about/"><b>ぽすりん堂のホームページ</b></a>
-  {% if section %} / {{ section }}{% endif %}
-</p>
-
+<p><a href="/"><b>ぽすりん堂のホームページ</b></a>{% if section %} / {{ section }}{% endif %}</p>
 {% include "partials/nav.njk" %}
-
 <h1>{{ title }}</h1>
 <hr>
-
 {{ content | safe }}
-
 <hr>
 <p><a href="{{ backUrl }}">{{ backLabel }}</a></p>
-
 {% include "partials/footer.njk" %}
-
 </body>
 </html>
