@@ -57,12 +57,18 @@ Pull Requestの差分とプレビューを確認して `main` にマージしま
 
 ## Cloudflare Workers Buildsの設定
 
-CloudflareダッシュボードのWorker `website` の **Settings → Build** で以下を設定します。
+CloudflareダッシュボードのWorker `website` → **Settings → Build** で、本番とプレビューの両方にビルドコマンドを設定します。
 
+**Production タブ**
 - Production branch：`main`
 - Build command：`npm run build`
 - Deploy command：`npx wrangler deploy`
-- Preview command：`npx wrangler preview`（デフォルトのままでよい）
+- Root directory：`/`
+
+**Preview Base タブ**
+- プレビューブランチのビルド：有効
+- Build command：`npm run build`
+- Preview command：`npx wrangler preview`
 - Root directory：`/`
 
 `wrangler.jsonc` は静的ファイルの場所を `_site` に指定し、PRプレビュー用の `previews` ブロックを含めます。`npx wrangler preview` はこのブロックを必要とします。
