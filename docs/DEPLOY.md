@@ -1,68 +1,76 @@
 # 編集から本番公開まで
 
-このサイトはGitHubリポジトリ `poslindo/website` をCloudflare Pagesがビルドして公開します。編集するのはソースファイルです。生成先の `_site/` は直接編集しません。
+このサイトはGitHubリポジトリ `poslindo/website` とCloudflare Workers Buildsで公開します。トップページはぽすりん堂、`/ramen/` は中華そば ぽす鈴です。ソースを編集し、生成先の `_site/` は直接編集しません。
 
-## 公開URLと編集場所
+## どこを編集するか
 
-| 変更したい内容 | 編集するファイル |
+| 内容 | 編集するファイル |
 | --- | --- |
-| トップページ（ぽすりん堂） | `circle-src/index.njk` |
-| 共通メニュー・共通レイアウト | `circle-src/_includes/partials/nav.njk`、`circle-src/_includes/layouts/circle.njk` |
+| ぽすりん堂トップ | `circle-src/index.njk` |
+| 共通メニュー・レイアウト | `circle-src/_includes/partials/nav.njk`、`circle-src/_includes/layouts/circle.njk` |
 | 案内・メンバー・イベント | `circle-src/about/`、`circle-src/member/`、`circle-src/event/` |
-| ぽすりん堂のデザイン | `circle.css` |
-| ぽす鈴ページ・デザイン・写真 | `ramen-src/index.html`、`ramen-src/ramen.css`、`ramen-src/`内の画像 |
-| ビルド設定と検査 | `eleventy.config.js`、`scripts/verify.mjs` |
+| ぽすりん堂のCSS | `circle.css` |
+| ぽす鈴のページ・CSS・画像 | `ramen-src/` |
+| Cloudflare Workers設定 | `wrangler.jsonc` |
 
-`.njk` の先頭にある `---` で囲んだ部分はページ設定です。本文を編集するときも残してください。
+`.njk` の先頭の `---` で囲まれた部分はページ設定です。公開URLを変えるとき以外は残します。CSSや写真を変更したら、HTML/CSS内のファイル名と保存名が一致することを確認します。
 
-## 1. 作業ブランチを作る
+## 1. ブランチを作る
 
-GitHubで `main` から作業ブランチを作成します。例：`edit-circle-home`。作業中の変更をブランチに保存し、確認後にPull Requestを作ります。
+GitHubで `main` から作業ブランチを作ります。例：`edit-circle-home`。編集したファイルをコミットし、作業ブランチへpushします。GitHub Desktopなら変更を確認してコミットし、`Push origin` を押します。
 
-## 2. ファイルを編集する
+## 2. ローカルで表示を確認する
 
-GitHub上で直接編集するか、GitHub DesktopやVS Codeでリポジトリを開いて編集します。新しいページは既存の `.njk` ページを参考に作り、設定に公開URL（`permalink`）を書きます。ぽす鈴のCSS名は `ramen.css` です。HTML内の読み込み先も一致させます。写真を置き換える場合は `ramen-src/` に入れ、HTML/CSSのファイル名と一致させます。
-
-## 3. ローカルで確認する
-
-Node.jsを用意し、リポジトリのフォルダーで実行します。
+リポジトリのフォルダーで次を実行します。Node.jsが必要です。
 
 ```sh
 npm ci
 npm run dev
 ```
 
-ターミナルに表示されたローカルURLを開き、`/`、`/ramen/`、案内・メンバー・イベント各ページを確認します。リンク、写真、スマートフォン幅の表示も見ます。
+表示されたローカルURLを開き、`/`、`/ramen/`、案内・メンバー・イベント各ページを確認します。リンク、画像、スマートフォン幅の表示も見ます。
 
-## 4. 本番用ビルドを確認する
+## 3. 本番用ビルドを確認する
 
 ```sh
 npm run build
 ```
 
-成功すると `_site/` に公開用ファイルが生成されます。リンク切れと必要ファイルの出力が検査されます。エラーが出た場合は指摘されたファイルを直して再実行します。
+成功すると `_site/` が生成されます。リンク切れと必要ファイルの出力を検査します。エラーが出たら表示されたファイル名・リンクを直し、再実行します。
 
-## 5. GitHubへ送る
+## 4. GitHubでPull Requestを作る
 
-GitHub Desktopでは、変更内容を確認してコミットし、`Push origin` を押します。GitHubで作業ブランチから `main` へのPull Requestを作ります。
+作業ブランチを `main` に向けたPull Requestにします。Cloudflare Workers BuildsはPRなどの非ProductionブランチにPreview commandを実行し、プレビューURLをPRへ投稿します。Cloudflareのチェックが成功したことと、プレビューで `/`、`/ramen/`、主要ページを確認します。
 
-コマンドを使う場合はブランチ名を自分のものに置き換えます。
+Gitコマンドを使う場合はブランチ名を置き換えます。
 
 ```sh
 git status
 git add .
-git commit -m "Update circle homepage and ramen path"
+git commit -m "Update circle homepage"
 git push -u origin edit-circle-home
 ```
 
-## 6. 本番へ反映・デプロイ確認
+## 5. 本番へ反映する
 
-Pull Requestの差分を確認して `main` にマージします。Cloudflare PagesはProduction branchの `main` を監視しているため、マージ後に自動で `npm run build` とデプロイが始まります。Cloudflare Pagesの最新デプロイでビルド成功を確認し、公開サイトの `/`、`/ramen/`、案内・メンバー・イベントページを開いて動作を確認します。
+Pull Requestの差分とプレビューを確認して `main` にマージします。Cloudflare Workers BuildsのProduction branchは `main` です。`main` への更新時はBuild command `npm run build` が実行され、その後Deploy command `npx wrangler deploy` が実行されます。デプロイ成功後、CloudflareのWorker `website` に接続した公開ドメインで `/`、`/ramen/`、各ページを確認します。
 
-## 問題が起きたとき
+## Cloudflare Workers Buildsの設定
 
-- ビルドエラー：ログに出たファイル名とエラーを直し、`npm run build` を再実行します。
-- CSSが反映されない：ぽすりん堂が `/circle.css`、ぽす鈴が `/ramen/ramen.css` を参照しているか確認します。
-- 写真が表示されない：画像の保存場所とHTML/CSSのファイル名・相対パスを確認します。
-- デプロイされない：Cloudflare PagesのProduction branchが `main`、出力先が `_site` であることと、最新デプロイのログを確認します。
-- 公開後に戻す：修正コミットを作って再デプロイするか、GitHubで問題の変更をRevertします。`_site/` を直接直しても次のビルドで消えます。
+CloudflareダッシュボードのWorker `website` の **Settings → Build** で以下を設定します。
+
+- Production branch：`main`
+- Build command：`npm run build`
+- Deploy command：`npx wrangler deploy`
+- Preview command：`npx wrangler preview`（デフォルトのままでよい）
+- Root directory：`/`
+
+`wrangler.jsonc` は静的ファイルの場所を `_site` に指定し、PRプレビュー用の `previews` ブロックを含めます。`npx wrangler preview` はこのブロックを必要とします。
+
+## エラー時
+
+- ビルドが止まる：CloudflareのBuild logで最初のエラーを読み、ローカルの `npm run build` で再現します。
+- プレビューだけ失敗する：`wrangler.jsonc` に `previews` があるか、Preview commandが `npx wrangler preview` かを確認します。
+- 本番デプロイが失敗する：Deploy commandが `npx wrangler deploy` で、`assets.directory` が `./_site` か確認します。
+- CSS・画像が出ない：ぽすりん堂は `/circle.css`、ぽす鈴は `/ramen/ramen.css` を参照しているか確認します。画像の名前と相対パスも確認します。
+- 公開後に戻す：GitHubで問題のコミットをRevertして `main` に反映し、再デプロイします。`_site/` の直接編集は次のビルドで消えます。

@@ -13,6 +13,7 @@
 | イベント | `circle-src/event/` |
 | ぽすりん堂共通CSS | `circle.css` |
 | ぽす鈴ページ・CSS・画像 | `ramen-src/` |
+| Workers設定 | `wrangler.jsonc` |
 | 編集・公開手順 | `docs/DEPLOY.md` |
 
 `.njk` の先頭にある `---` から `---` までのページ設定は残してください。
@@ -24,13 +25,15 @@ npm ci
 npm run dev
 ```
 
-本番用の生成とリンク検査は `npm run build` です。公開ファイルは `_site/` に生成されます。生成物を直接編集しないでください。
+本番用ビルドとリンク検査は `npm run build` です。公開用ファイルは `_site/` に生成されます。`_site/` は直接編集しません。
 
-## Cloudflare Pages
+## Cloudflare Workers Builds
 
 - Production branch：`main`
 - Build command：`npm run build`
-- Build output directory：`_site`
-- Root directory：リポジトリ直下
+- Deploy command：`npx wrangler deploy`
+- Preview command：`npx wrangler preview`
+- Root directory：`/`
+- 静的ファイル：`wrangler.jsonc` の `assets.directory` で `./_site` を指定
 
-`main` への反映後、Cloudflare Pagesが自動でビルド・デプロイします。手順の詳細は [docs/DEPLOY.md](docs/DEPLOY.md) を参照してください。
+`main` へのマージ後に本番デプロイ、作業ブランチやPRではプレビューが実行されます。詳細は [docs/DEPLOY.md](docs/DEPLOY.md) を参照してください。
