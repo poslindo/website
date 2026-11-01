@@ -9,6 +9,7 @@ const previewError = document.querySelector("#content-preview-error");
 const sampleSource = document.querySelector("#content-sample-source");
 const useSample = document.querySelector("#content-use-sample");
 const draftSave = document.querySelector("#content-draft-save");
+const draftDelete = document.querySelector("#content-draft-delete");
 const publish = document.querySelector("#content-publish");
 const status = document.querySelector("#content-status");
 const workspace = document.querySelector(".content-editor-workspace");
@@ -99,6 +100,7 @@ async function loadArticle(selection = existing.value) {
     filename.value = "";
     body.value = "";
     dirty = false;
+    draftDelete.hidden = true;
     loadedSelection = "";
     loadedCategory = category.value;
     setStatus("新しい記事");
@@ -107,6 +109,7 @@ async function loadArticle(selection = existing.value) {
   }
   if (selection.startsWith("draft:")) {
     activeDraftId = selection.slice(6);
+    draftDelete.hidden = false;
     const draft = await request(`/api/admin/content-draft?id=${encodeURIComponent(activeDraftId)}`);
     title.value = draft.title;
     filename.value = draft.filename;
@@ -116,6 +119,7 @@ async function loadArticle(selection = existing.value) {
   } else {
     const articleName = selection.slice(8);
     activeDraftId = null;
+    draftDelete.hidden = true;
     const query = new URLSearchParams({ category: category.value, filename: articleName });
     const article = await request(`/api/admin/content?${query}`);
     title.value = article.title;
@@ -152,6 +156,7 @@ async function saveCurrentDraft() {
     existing.value = `draft:${activeDraftId}`;
     loadedSelection = existing.value;
     loadedCategory = category.value;
+    draftDelete.hidden = false;
   } catch (error) {
     setStatus(`下書きを保存できません。${error.message}`);
   } finally {
@@ -185,6 +190,7 @@ async function publishArticle() {
     existing.value = `article:${filename.value}`;
     loadedSelection = existing.value;
     loadedCategory = category.value;
+    draftDelete.hidden = true;
   } catch (error) {
     dirty = true;
     revision++;
@@ -192,6 +198,25 @@ async function publishArticle() {
   } finally {
     publish.disabled = false;
     draftSave.disabled = false;
+  }
+}
+
+async function deleteCurrentDraft() {
+  if (!activeDraftId || !existing.value.startsWith("draft:")) return;
+  if (!confirm("この保存済み下書きを完全に削除しますか？未保存の編集も破棄されます。")) return;
+  draftDelete.disabled = true;
+  try {
+    await request(`/api/admin/content-draft?id=${encodeURIComponent(activeDraftId)}`, { method: "DELETE" });
+    activeDraftId = null;
+    dirty = false;
+    existing.value = "";
+    await loadFiles();
+    await loadArticle("");
+    setStatus("下書きを削除しました。");
+  } catch (error) {
+    setStatus(`下書きを削除できません。${error.message}`);
+  } finally {
+    draftDelete.disabled = false;
   }
 }
 
@@ -251,6 +276,7 @@ existing.addEventListener("change", async () => {
   });
 });
 draftSave.addEventListener("click", () => saveCurrentDraft());
+draftDelete.addEventListener("click", deleteCurrentDraft);
 publish.addEventListener("click", publishArticle);
 form.addEventListener("submit", event => event.preventDefault());
 useSample.addEventListener("click", () => {
