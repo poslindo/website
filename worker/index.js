@@ -293,9 +293,9 @@ export class SiteState extends DurableObject {
       } catch { return json({ error: "投稿内容を読み取れません。" }, 400); }
       if (!body || typeof body !== "object" || Array.isArray(body)) return json({ error: "投稿内容を読み取れません。" }, 400);
       if (body.website) return json({ ok: true });
-      const name = typeof body.name === "string" ? body.name.trim() : "";
+      const name = (typeof body.name === "string" ? body.name.trim() : "") || "名無しさん";
       const message = typeof body.message === "string" ? body.message.trim() : "";
-      if (!name || name.length > 40 || !message || message.length > 500) return json({ error: "名前は1〜40文字、本文は1〜500文字で入力してください。" }, 400);
+      if (name.length > 40 || !message || message.length > 500) return json({ error: "名前は40文字以内、本文は1〜500文字で入力してください。" }, 400);
       const captchaError = await verifyRecaptcha(body.token, "board_post", request, this.env);
       if (captchaError) return captchaError;
       try {
