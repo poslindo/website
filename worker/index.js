@@ -36,6 +36,7 @@ async function githubErrorMessage(response) {
 const githubHeaders = token => ({
   "Authorization": `Bearer ${token}`,
   "Accept": "application/vnd.github+json",
+  "User-Agent": "poslindo-content-editor",
   "X-GitHub-Api-Version": "2022-11-28",
 });
 async function contentApi(request, env, url) {
