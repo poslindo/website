@@ -142,7 +142,10 @@ async function saveCurrentDraft() {
     });
     dirty = revision !== savedRevision;
     setStatus(dirty ? "保存中に変更があり、続けて保存します…" : `下書き保存済み · ${new Date(result.updatedAt).toLocaleString("ja-JP")}`);
-    await loadFiles();
+    await loadFiles().catch(() => {
+      if (![...existing.options].some(option => option.value === `draft:${activeDraftId}`))
+        existing.add(new Option(title.value || filename.value || "下書き", `draft:${activeDraftId}`));
+    });
     existing.value = `draft:${activeDraftId}`;
     saveAgain = dirty;
   } catch (error) {
