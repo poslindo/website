@@ -15,6 +15,8 @@
     "bindings": [{ "name": "SITE_STATE", "class_name": "SiteState" }]
   },
   "migrations": [{ "tag": "v1", "new_sqlite_classes": ["SiteState"] }],
+  "r2_buckets": [{ "binding": "BOARD_BACKUPS", "bucket_name": "poslin-board-backups" }],
+  "triggers": { "crons": ["0 18 * * *"] },
   "preview_urls": true,
   "previews": {}
 }
