@@ -24,6 +24,43 @@ const noStore = response => {
   headers.set("Cache-Control", "no-store");
   return new Response(response.body, { status: response.status, headers });
 };
+
+function decodeJwtPart(part) {
+  const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
+  return JSON.parse(atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "=")));
+}
+async function verifyAccess(request, env) {
+  if (!env.ACCESS_TEAM_DOMAIN || !env.ACCESS_AUD) return false;
+  const jwt = request.headers.get("Cf-Access-Jwt-Assertion");
+  if (!jwt || jwt.length > 12000) return false;
+  try {
+    const parts = jwt.split(".");
+    if (parts.length !== 3) return false;
+    const header = decodeJwtPart(parts[0]);
+    const claims = decodeJwtPart(parts[1]);
+    const teamUrl = new URL(env.ACCESS_TEAM_DOMAIN);
+    if (teamUrl.protocol !== "https:" || !teamUrl.hostname.endsWith(".cloudflareaccess.com") ||
+        teamUrl.pathname !== "/" || teamUrl.search || teamUrl.hash) return false;
+    const issuer = teamUrl.origin;
+    if (header.alg !== "RS256" || typeof header.kid !== "string" ||
+        claims.iss !== issuer || !Array.isArray(claims.aud) ||
+        !claims.aud.includes(env.ACCESS_AUD) ||
+        !Number.isFinite(claims.exp) || claims.exp <= Date.now() / 1000 ||
+        !Number.isFinite(claims.nbf) && claims.nbf !== undefined ||
+        claims.nbf > Date.now() / 1000) return false;
+    const certs = await fetch(issuer + "/cdn-cgi/access/certs");
+    if (!certs.ok) return false;
+    const body = await certs.json();
+    const jwk = body.keys?.find(key => key.kid === header.kid && key.kty === "RSA");
+    if (!jwk) return false;
+    const key = await crypto.subtle.importKey("jwk", jwk, {
+      name: "RSASSA-PKCS1-v1_5", hash: "SHA-256"
+    }, false, ["verify"]);
+    const signatureBase64 = parts[2].replace(/-/g, "+").replace(/_/g, "/");
+    const signature = Uint8Array.from(atob(signatureBase64.padEnd(Math.ceil(signatureBase64.length / 4) * 4, "=")), c => c.charCodeAt(0));
+    return await crypto.subtle.verify("RSASSA-PKCS1-v1_5", key, signature, encoder.encode(parts[0] + "." + parts[1]));
+  } catch { return false; }
+}
 const emailAddress = "contact" + "@" + "poslin.org";
 
 async function verifyRecaptcha(token, action, request, env) {
@@ -86,8 +123,19 @@ export default {
       return new Response(response.body, { status: response.status, headers });
     }
     if (request.method !== "GET" && request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+    let forwarded = request;
+    if (url.pathname.startsWith("/api/admin/")) {
+      // Reject untrusted client headers. Only this Worker adds this internal assertion.
+      if (!await verifyAccess(request, env)) return noStore(json({ error: "Cloudflare Access認証が必要です。" }, 401));
+      const headers = new Headers(request.headers);
+      headers.delete("X-Internal-Board-Admin");
+      headers.set("X-Internal-Board-Admin", "verified");
+      forwarded = new Request(request, { headers });
+      if (request.method === "POST" && request.headers.get("Origin") !== url.origin)
+        return noStore(json({ error: "Invalid Origin" }, 403));
+    }
     const id = env.SITE_STATE.idFromName("site-state");
-    const response = await env.SITE_STATE.get(id).fetch(request);
+    const response = await env.SITE_STATE.get(id).fetch(forwarded);
     return noStore(response);
   },
 };
@@ -130,8 +178,8 @@ export class SiteState extends DurableObject {
 
   async authenticated(request) {
     const supplied = request.headers.get("Authorization") || "";
-    return supplied.startsWith("Bearer ") &&
-      await sameSecret(supplied.slice(7), this.env.BOARD_ADMIN_TOKEN);
+    return request.headers.get("X-Internal-Board-Admin") === "verified" || (supplied.startsWith("Bearer ") &&
+      await sameSecret(supplied.slice(7), this.env.BOARD_ADMIN_TOKEN));
   }
 
   snapshot() {
@@ -158,10 +206,11 @@ export class SiteState extends DurableObject {
         if (!Number.isSafeInteger(data?.id) || data.id < 1 ||
           !["hide", "show", "delete"].includes(data?.action))
           return json({ error: "Invalid action or id" }, 400);
-        const result = data.action === "delete"
-          ? this.ctx.storage.sql.exec(`DELETE FROM board_posts WHERE id = ? RETURNING id`, data.id).toArray()
-          : this.ctx.storage.sql.exec(`UPDATE board_posts SET hidden = ? WHERE id = ? RETURNING id`,
-              data.action === "hide" ? 1 : 0, data.id).toArray();
+        // "delete" means reversible soft-delete, never SQL DELETE.
+        const result = this.ctx.storage.sql.exec(
+          `UPDATE board_posts SET hidden = ? WHERE id = ? RETURNING id`,
+          data.action === "show" ? 0 : 1, data.id
+        ).toArray();
         return result.length ? json({ ok: true }) : json({ error: "Not found" }, 404);
       }
       if (request.method === "POST" && url.pathname === "/api/admin/restore") {
