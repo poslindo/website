@@ -31,21 +31,20 @@ async function request(url, options = {}) {
 
 let activeDraftId = null;
 let previewTimer;
-let draftTimer;
 let previewController;
 let savingDraft = false;
 let dirty = false;
 let sample = "";
 let revision = 0;
+let loadedSelection = "";
+let loadedCategory = category.value;
 workspace.dataset.mobileTab = "write";
 
 function setStatus(message) { status.textContent = message; }
 function markDirty() {
   revision++;
   dirty = true;
-  setStatus("未保存の変更があります");
-  clearTimeout(draftTimer);
-  draftTimer = setTimeout(saveCurrentDraft, 900);
+  setStatus("未保存の変更があります。「下書きを保存」で保存できます。");
   schedulePreview();
 }
 
@@ -93,29 +92,29 @@ function schedulePreview() {
   previewTimer = setTimeout(renderPreview, 250);
 }
 
-async function loadArticle() {
-  clearTimeout(draftTimer);
-  if (!existing.value) {
+async function loadArticle(selection = existing.value) {
+  if (!selection) {
     activeDraftId = null;
     title.value = "";
     filename.value = "";
     body.value = "";
     dirty = false;
+    loadedSelection = "";
+    loadedCategory = category.value;
     setStatus("新しい記事");
     schedulePreview();
     return;
   }
-  if (existing.value.startsWith("draft:")) {
-    activeDraftId = existing.value.slice(6);
+  if (selection.startsWith("draft:")) {
+    activeDraftId = selection.slice(6);
     const draft = await request(`/api/admin/content-draft?id=${encodeURIComponent(activeDraftId)}`);
-    category.value = draft.category;
     title.value = draft.title;
     filename.value = draft.filename;
     body.value = draft.body;
     dirty = false;
     setStatus(`下書き保存済み · ${new Date(draft.updatedAt).toLocaleString("ja-JP")}`);
   } else {
-    const articleName = existing.value.slice(8);
+    const articleName = selection.slice(8);
     activeDraftId = null;
     const query = new URLSearchParams({ category: category.value, filename: articleName });
     const article = await request(`/api/admin/content?${query}`);
@@ -125,6 +124,7 @@ async function loadArticle() {
     dirty = false;
     setStatus("公開中の記事を編集中");
   }
+  loadedSelection = selection;
   schedulePreview();
 }
 
@@ -132,8 +132,9 @@ async function saveCurrentDraft() {
   if (savingDraft || !dirty) return;
   savingDraft = true;
   const savedRevision = revision;
-  let saveAgain = false;
   existing.disabled = true;
+  draftSave.disabled = true;
+  publish.disabled = true;
   try {
     activeDraftId ||= crypto.randomUUID();
     const result = await request("/api/admin/content-drafts", {
@@ -141,25 +142,29 @@ async function saveCurrentDraft() {
       body: JSON.stringify({ id: activeDraftId, category: category.value, filename: filename.value, title: title.value, body: body.value }),
     });
     dirty = revision !== savedRevision;
-    setStatus(dirty ? "保存中に変更があり、続けて保存します…" : `下書き保存済み · ${new Date(result.updatedAt).toLocaleString("ja-JP")}`);
+    setStatus(dirty
+      ? "下書きを保存しました。保存中に編集した変更は未保存です。もう一度保存してください。"
+      : `下書き保存済み · ${new Date(result.updatedAt).toLocaleString("ja-JP")}`);
     await loadFiles().catch(() => {
       if (![...existing.options].some(option => option.value === `draft:${activeDraftId}`))
         existing.add(new Option(title.value || filename.value || "下書き", `draft:${activeDraftId}`));
     });
     existing.value = `draft:${activeDraftId}`;
-    saveAgain = dirty;
+    loadedSelection = existing.value;
+    loadedCategory = category.value;
   } catch (error) {
     setStatus(`下書きを保存できません。${error.message}`);
   } finally {
     savingDraft = false;
     existing.disabled = false;
-    if (saveAgain) draftTimer = setTimeout(saveCurrentDraft, 0);
+    draftSave.disabled = false;
+    publish.disabled = false;
   }
 }
 
 async function publishArticle() {
+  if (savingDraft) return;
   if (!form.reportValidity()) return;
-  clearTimeout(draftTimer);
   publish.disabled = true;
   draftSave.disabled = true;
   setStatus("公開しています…");
@@ -178,11 +183,12 @@ async function publishArticle() {
     setStatus(`公開しました · ${result.url} · ビルド完了後に反映されます${draftCleanupFailed ? "（下書き一覧の整理は未完了です）" : ""}`);
     await loadFiles().catch(() => {});
     existing.value = `article:${filename.value}`;
+    loadedSelection = existing.value;
+    loadedCategory = category.value;
   } catch (error) {
     dirty = true;
     revision++;
-    await saveCurrentDraft();
-    setStatus(`公開できません。入力内容を保持しました。${error.message}`);
+    setStatus(`公開できません。編集内容は未保存のまま画面に残っています。「下書きを保存」で残せます。${error.message}`);
   } finally {
     publish.disabled = false;
     draftSave.disabled = false;
@@ -221,25 +227,34 @@ title.addEventListener("input", markDirty);
 filename.addEventListener("input", markDirty);
 body.addEventListener("input", markDirty);
 category.addEventListener("change", () => {
+  if (dirty && !confirm("未保存の編集を破棄して分類を切り替えますか？")) {
+    category.value = loadedCategory;
+    return;
+  }
+  dirty = false;
+  loadedCategory = category.value;
   activeDraftId = null;
   existing.value = "";
-  markDirty();
+  loadArticle("");
   loadFiles().catch(error => setStatus(`記事一覧を取得できません。${error.message}`));
 });
 existing.addEventListener("change", async () => {
   const selected = existing.value;
-  await saveCurrentDraft();
-  if (dirty) {
-    existing.value = activeDraftId ? `draft:${activeDraftId}` : "";
+  if (dirty && !confirm("未保存の編集を破棄して別の記事を開きますか？")) {
+    existing.value = loadedSelection;
     return;
   }
-  existing.value = selected;
-  loadArticle().catch(error => setStatus(`記事を読み込めません。${error.message}`));
+  dirty = false;
+  loadArticle(selected).catch(error => {
+    existing.value = loadedSelection;
+    setStatus(`記事を読み込めません。${error.message}`);
+  });
 });
 draftSave.addEventListener("click", () => saveCurrentDraft());
 publish.addEventListener("click", publishArticle);
 form.addEventListener("submit", event => event.preventDefault());
 useSample.addEventListener("click", () => {
+  if (dirty && !confirm("未保存の編集を破棄してサンプルを読み込みますか？")) return;
   body.value = sample;
   title.value = "Markdown記事のサンプル";
   filename.value = "";
