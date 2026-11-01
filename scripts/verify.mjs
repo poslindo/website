@@ -4,6 +4,8 @@ import { readFileSync, existsSync } from "node:fs";
 import { resolve, join, dirname } from "node:path";
 
 const output = resolve("_site");
+const circleCss = readFileSync(resolve("circle.css"), "utf8");
+assert.match(circleCss, /font-family:\s*"BIZ UDPGothic",/);
 const circlePages = ["index.html", "about/index.html", "member/index.html", "event/index.html", "event/2026IYA/index.html", "board/index.html", "contact/index.html", "document/index.html"];
 const articlePages = ["document/markdown-sample/index.html", "document/MAFUYU/index.html"];
 const ramenFiles = ["ramen/index.html", "ramen/ramen.css", "ramen/ramen-hero.jpg", "ramen/interior.jpg"];
