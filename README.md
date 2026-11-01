@@ -18,6 +18,8 @@
 | Workers設定 | `wrangler.jsonc` |
 | 編集・公開手順 | `docs/DEPLOY.md` |
 
+reCAPTCHA v3のキー設定は [docs/DEPLOY.md](docs/DEPLOY.md#recaptcha-v3のキー) を参照してください。
+
 `.njk` の先頭にある `---` から `---` までのページ設定は残してください。
 
 ## ローカル確認

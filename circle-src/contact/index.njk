@@ -5,6 +5,9 @@ section: 連絡先
 permalink: /contact/
 ---
 
-<p>ご連絡は、以下のメールアドレスまでお願いします。</p>
-<p class="contact-address">contact [at] poslin [dot] org</p>
-<p>メールを送るときは、[at] を @ に、[dot] を . に置き換えてください。</p>
+<p>reCAPTCHAで確認すると、連絡先メールアドレスが表示されます。</p>
+<button id="contact-reveal" type="button" disabled>メールアドレスを表示</button>
+<p id="contact-status" aria-live="polite"></p>
+<p id="contact-address" class="contact-address" hidden></p>
+<p id="contact-instructions" hidden>メールを送るときは、[at] を @ に、[dot] を . に置き換えてください。</p>
+<script src="/site.js" defer></script>

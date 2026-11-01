@@ -3,6 +3,9 @@
   "name": "website",
   "main": "worker/index.js",
   "compatibility_date": "2026-11-01",
+  "vars": {
+    "RECAPTCHA_SITE_KEY": "6LfX9gouAAAAANB7WVugr1lqUKs0FEDceC0NEaLY"
+  },
   "assets": {
     "directory": "./_site",
     "binding": "ASSETS",

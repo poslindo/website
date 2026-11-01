@@ -75,6 +75,14 @@ CloudflareダッシュボードのWorker `website` → **Settings → Build** �
 
 `wrangler.jsonc` は静的ファイルの場所を `_site` に指定し、PRプレビュー用の `previews` ブロックを含めます。`npx wrangler preview` はこのブロックを必要とします。
 
+## reCAPTCHA v3のキー
+
+Google reCAPTCHA管理画面でWebのスコア型キーを作り、公開ドメイン `poslin.org` を登録します。チャレンジ・本人確認は有効にしません。連絡先の表示ボタンと掲示板の投稿時に、画面操作を挟まず裏側でスコアを確認します。サイトキーは `wrangler.jsonc` の `RECAPTCHA_SITE_KEY` に設定し、Cloudflare Worker `website` の **Settings → Variables and Secrets** に次のSecretを追加します。
+
+- `RECAPTCHA_SECRET_KEY`：Google CloudのIntegrationタブから取得するlegacy secret key。WorkerからGoogleの検証APIを呼ぶために使います。
+
+どちらも設定されると、連絡先ページは確認後にメールアドレスを表示し、掲示板はスコア0.5以上かつ各操作に対応するアクション名の検証に成功した投稿だけを保存します。ローカル開発では `.dev.vars.example` を `.dev.vars` にコピーして値を設定します。`.dev.vars` はGitに追加しません。
+
 既に作成済みのプレビューはPreview Baseの変更を引き継がない場合があります。その場合はWorkerの環境選択で該当ブランチを選び、**Settings → Build** のBuild commandにも `npm run build` を設定します。
 
 ## エラー時
