@@ -1,22 +1,10 @@
-// 同人サークル側だけEleventyで生成する。
-// ぽす鈴のトップページ・CSS・写真は加工せずにそのまま公開する。
+// ぽすりん堂の各ページと、ぽす鈴の静的サイトをまとめて出力する。
 export default function (eleventyConfig) {
-  for (const file of [
-    "index.html",
-    "styles.css",
-    "ramen-hero.jpg",
-    "interior.jpg",
-    "circle.css",
-  ]) {
-    eleventyConfig.addPassthroughCopy(file);
-  }
+  eleventyConfig.addPassthroughCopy("circle.css");
+  eleventyConfig.addPassthroughCopy({ "ramen-src": "ramen" });
 
   return {
-    dir: {
-      input: "circle-src",
-      includes: "_includes",
-      output: "_site",
-    },
+    dir: { input: "circle-src", includes: "_includes", output: "_site" },
     templateFormats: ["njk"],
   };
 }
