@@ -204,7 +204,7 @@ export default {
       ].join("; "));
       return new Response(response.body, { status: response.status, headers });
     }
-    if (request.method !== "GET" && request.method !== "POST") return json({ error: "Method not allowed" }, 405);
+    if (request.method !== "GET" && request.method !== "POST" && request.method !== "DELETE") return json({ error: "Method not allowed" }, 405);
     let forwarded = request;
     if (url.pathname.startsWith("/api/admin/")) {
       // Reject untrusted client headers. Only this Worker adds this internal assertion.
@@ -213,10 +213,10 @@ export default {
       headers.delete("X-Internal-Board-Admin");
       headers.set("X-Internal-Board-Admin", "verified");
       forwarded = new Request(request, { headers });
-      if (request.method === "POST" && request.headers.get("Origin") !== url.origin)
+      if (request.method !== "GET" && request.headers.get("Origin") !== url.origin)
         return noStore(json({ error: "Invalid Origin" }, 403));
-      if (url.pathname === "/api/admin/content/preview") return noStore(await previewApi(request));
-      if (url.pathname === "/api/admin/content") return noStore(await contentApi(request, env, url));
+      if (url.pathname === "/api/admin/content/preview") return noStore(await previewApi(forwarded));
+      if (url.pathname === "/api/admin/content") return noStore(await contentApi(forwarded, env, url));
     }
     const id = env.SITE_STATE.idFromName("site-state");
     const response = await env.SITE_STATE.get(id).fetch(forwarded);
@@ -232,6 +232,7 @@ export class SiteState extends DurableObject {
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS board_posts (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL, message TEXT NOT NULL, created_at TEXT NOT NULL);`);
     ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS rate_events (subject TEXT NOT NULL, kind TEXT NOT NULL, created_ms INTEGER NOT NULL);`);
     ctx.storage.sql.exec(`CREATE INDEX IF NOT EXISTS rate_events_lookup ON rate_events(subject, kind, created_ms);`);
+    ctx.storage.sql.exec(`CREATE TABLE IF NOT EXISTS content_drafts (id TEXT PRIMARY KEY, category TEXT NOT NULL, filename TEXT NOT NULL, title TEXT NOT NULL, body TEXT NOT NULL, updated_at TEXT NOT NULL);`);
     // Idempotent migrations for moderation and post connection metadata.
     const columns = ctx.storage.sql.exec(`PRAGMA table_info(board_posts)`).toArray().map(c => c.name);
     if (!columns.includes("hidden")) ctx.storage.sql.exec(`ALTER TABLE board_posts ADD COLUMN hidden INTEGER NOT NULL DEFAULT 0`);
@@ -288,6 +289,48 @@ export class SiteState extends DurableObject {
         return json({ posts: this.snapshot().posts });
       if (request.method === "GET" && url.pathname === "/api/admin/backup")
         return json(this.snapshot());
+      if (request.method === "GET" && url.pathname === "/api/admin/content-drafts") {
+        const category = url.searchParams.get("category");
+        if (!contentCategories.has(category)) return json({ error: "分類が正しくありません。" }, 400);
+        return json({ drafts: this.ctx.storage.sql.exec(
+          `SELECT id, category, filename, title, updated_at AS updatedAt FROM content_drafts WHERE category = ? ORDER BY updated_at DESC`, category
+        ).toArray() });
+      }
+      if (url.pathname === "/api/admin/content-draft" && request.method === "GET") {
+        const id = url.searchParams.get("id") || "";
+        if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ error: "下書きIDが正しくありません。" }, 400);
+        const draft = this.ctx.storage.sql.exec(
+          `SELECT id, category, filename, title, body, updated_at AS updatedAt FROM content_drafts WHERE id = ?`, id
+        ).toArray()[0];
+        return draft ? json(draft) : json({ error: "下書きが見つかりません。" }, 404);
+      }
+      if (url.pathname === "/api/admin/content-drafts" && request.method === "POST") {
+        let data;
+        try {
+          const raw = await request.text();
+          if (encoder.encode(raw).length > 300_000) return json({ error: "本文が長すぎます。" }, 413);
+          data = JSON.parse(raw);
+        } catch { return json({ error: "入力内容を読み取れませんでした。" }, 400); }
+        if (!/^[0-9a-f-]{36}$/i.test(data?.id || "") || !contentCategories.has(data?.category) ||
+          typeof data.filename !== "string" || data.filename.length > 80 ||
+          typeof data.title !== "string" || data.title.length > 150 || /[\r\n]/.test(data.title) ||
+          typeof data.body !== "string" || encoder.encode(data.body).length > 250_000)
+          return json({ error: "記事設定と本文を確認してください。" }, 400);
+        const updatedAt = new Date().toISOString();
+        this.ctx.storage.sql.exec(
+          `INSERT INTO content_drafts (id, category, filename, title, body, updated_at) VALUES (?, ?, ?, ?, ?, ?)
+           ON CONFLICT(id) DO UPDATE SET category = excluded.category, filename = excluded.filename,
+             title = excluded.title, body = excluded.body, updated_at = excluded.updated_at`,
+          data.id, data.category, data.filename, data.title, data.body, updatedAt
+        );
+        return json({ ok: true, updatedAt });
+      }
+      if (url.pathname === "/api/admin/content-draft" && request.method === "DELETE") {
+        const id = url.searchParams.get("id") || "";
+        if (!/^[0-9a-f-]{36}$/i.test(id)) return json({ error: "下書きIDが正しくありません。" }, 400);
+        this.ctx.storage.sql.exec(`DELETE FROM content_drafts WHERE id = ?`, id);
+        return json({ ok: true });
+      }
       if (request.method === "POST" && url.pathname === "/api/admin/board") {
         let data;
         try { data = await request.json(); } catch { return json({ error: "Invalid JSON" }, 400); }

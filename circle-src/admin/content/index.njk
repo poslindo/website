@@ -1,49 +1,71 @@
 ---
 layout: layouts/circle.njk
-title: 記事の編集
+title: 記事を書く
 section: 管理
 permalink: /admin/content/
 backUrl: /admin/board/
 backLabel: 掲示板管理へ
 ---
 
-<p>分類フォルダーを選び、タイトル・ファイル名・本文を入力して保存します。保存するとサイトに反映されます。</p>
-<div class="content-editor-workspace">
-<form id="content-form" class="content-editor">
-  <label>分類（保存先フォルダー）
-    <select id="content-category" required>
-      <option value="about">案内</option>
-      <option value="event">イベント</option>
-      <option value="member">ユーザー</option>
-      <option value="document" selected>ドキュメント</option>
-    </select>
-  </label>
-  <label>既存の記事
-    <select id="content-existing"><option value="">新しい記事</option></select>
-  </label>
-  <label>タイトル
-    <input id="content-title" maxlength="150" required>
-  </label>
-  <label>ファイル名（英小文字・数字・ハイフン）
-    <input id="content-filename" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" required>
-  </label>
-  <label>本文（でんでんマークダウン）
-    <textarea id="content-body" rows="22" spellcheck="false"></textarea>
-  </label>
-  <button type="button" id="content-image">画像URLを本文に挿入</button>
-  <p>ルビは <code>{漢字|かんじ}</code>、画像は <code>![説明](https://...)</code> で書けます。行頭の全角スペースは字下げとして残ります。</p>
-  <button type="submit" id="content-save">保存して公開</button>
-</form>
-<section class="content-preview-panel" aria-label="記事プレビューとサンプル">
-  <h2>記事のプレビュー</h2>
-  <iframe id="content-preview" title="記事のプレビュー" sandbox></iframe>
-  <details open>
-    <summary>編集用サンプルMarkdown原文</summary>
-    <p><button type="button" id="content-use-sample">サンプルを本文に入れる</button></p>
-    <p><a href="/markdown-editor-sample.md.txt" download>サンプルファイルをダウンロード</a></p>
-    <pre id="content-sample-source">サンプルを読み込み中…</pre>
-  </details>
+<section class="content-editor-shell" aria-label="記事エディター">
+  <div class="content-editor-toolbar" role="toolbar" aria-label="記事の保存と状態">
+    <div class="content-save-actions">
+      <button type="button" id="content-draft-save">下書きを保存</button>
+      <button type="button" id="content-publish">公開する</button>
+    </div>
+    <p id="content-status" role="status" aria-live="polite">入力待ち</p>
+  </div>
+  <form id="content-form" class="content-editor">
+    <label class="content-title-label">タイトル
+      <input id="content-title" maxlength="150" required placeholder="記事のタイトル">
+    </label>
+    <div class="content-mobile-tabs" role="tablist" aria-label="編集表示">
+      <button type="button" role="tab" id="content-tab-write" aria-selected="true" aria-controls="content-write-panel">本文</button>
+      <button type="button" role="tab" id="content-tab-preview" aria-selected="false" aria-controls="content-preview-panel">プレビュー</button>
+    </div>
+    <div class="content-editor-workspace">
+      <section id="content-write-panel" class="content-write-panel" aria-label="本文">
+        <div class="content-markdown-toolbar" role="toolbar" aria-label="Markdown入力">
+          <button type="button" data-insert="h2">見出し</button>
+          <button type="button" data-insert="h3">小見出し</button>
+          <button type="button" data-insert="link">リンク</button>
+          <button type="button" data-insert="image">画像</button>
+          <button type="button" data-insert="ruby">ルビ</button>
+          <button type="button" data-insert="indent">字下げ</button>
+        </div>
+        <label class="content-body-label">本文（でんでんマークダウン）
+          <textarea id="content-body" rows="24" spellcheck="false" placeholder="ここから記事を書きます"></textarea>
+        </label>
+      </section>
+      <section id="content-preview-panel" class="content-preview-panel" aria-label="記事プレビュー">
+        <h2>記事のプレビュー</h2>
+        <p id="content-preview-error" role="status" aria-live="polite" hidden></p>
+        <iframe id="content-preview" title="記事のプレビュー" sandbox></iframe>
+      </section>
+    </div>
+    <details class="content-settings">
+      <summary>記事設定</summary>
+      <label>分類（保存先フォルダー）
+        <select id="content-category" required>
+          <option value="about">案内</option>
+          <option value="event">イベント</option>
+          <option value="member">ユーザー</option>
+          <option value="document" selected>ドキュメント</option>
+        </select>
+      </label>
+      <label>記事・下書き
+        <select id="content-existing"><option value="">新しい記事</option></select>
+      </label>
+      <label>ファイル名（英小文字・数字・ハイフン）
+        <input id="content-filename" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" maxlength="80" required>
+      </label>
+    </details>
+    <details class="content-help">
+      <summary>Markdownヘルプとサンプル</summary>
+      <p>本文にYAML設定は不要です。ルビは <code>{漢字|かんじ}</code>、画像は <code>![説明](https://...)</code> で書けます。行頭の全角スペースは字下げとして残ります。</p>
+      <p><button type="button" id="content-use-sample">サンプルを本文に入れる</button> <a href="/markdown-editor-sample.md.txt" download>サンプルファイルをダウンロード</a></p>
+      <pre id="content-sample-source">サンプルを読み込み中…</pre>
+    </details>
+  </form>
 </section>
-</div>
-<p id="content-status" role="status" aria-live="polite"></p>
 <script src="/admin-content.js" defer></script>

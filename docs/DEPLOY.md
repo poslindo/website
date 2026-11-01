@@ -22,11 +22,11 @@
 
 ## Markdown記事の編集画面
 
-`/admin/board/` の「記事を編集する」から、案内・イベント・ユーザー・ドキュメントのMarkdown記事を作成・編集できます。分類で保存先フォルダーを選び、タイトルと英小文字のファイル名を入力します。記事本文にYAML設定はありません。タイトルは画面で別に入力してMarkdownファイル内の非表示コメントに保存し、本文中の複数の`#`見出しはそのまま表示します。編集画面の右側には原文サンプルと、入力内容を公開用と同じMarkdown処理で描画したプレビューが表示されます。
+`/admin/board/` の「記事を編集する」から、案内・イベント・ユーザー・ドキュメントのMarkdown記事を作成・編集できます。本文を中心に編集し、狭い画面では「本文」「プレビュー」をタブで切り替えます。タイトルは本文の直上に置き、分類・保存先フォルダー・ファイル名は「記事設定」にまとめます。見出し、リンク、画像、ルビ、字下げのツールバーからMarkdownを挿入できます。入力内容は自動で下書き保存され、上部の状態表示で未保存・保存済みを確認できます。「下書きを保存」と「公開する」は別の操作です。記事本文にYAML設定はありません。タイトルは画面で別に入力してMarkdownファイル内の非表示コメントに保存し、本文中の複数の`#`見出しはそのまま表示します。
 
 本文はでんでんマークダウンに合わせ、行内改行、全角スペースの字下げ、`{漢字|かんじ}`のルビ記法、`![説明](https://example.com/image.jpg)`の画像URL記法を使えます。記事URLは分類とファイル名から決まります（例：`event/autumn-meetup.md` → `/event/autumn-meetup/`）。
 
-初回利用前にCloudflare Worker `website` へ `CONTENT_GITHUB_TOKEN` Secretを設定し、`poslindo/website` の `main` ブランチにContentsを書き込める権限を付与してください（設定コマンド：`npx wrangler secret put CONTENT_GITHUB_TOKEN`）。GitHubへの保存で `main` が更新されるとWorkers Buildsが再ビルド・公開します。Cloudflare Accessのアプリには `/admin/*` と `/api/admin/*` を含め、許可する編集者だけを登録します。
+下書きはCloudflare Durable Objectに保存され、GitHubや公開サイトは更新しません。「公開する」を選んだときだけGitHubの`main`を更新し、Workers Buildsが再ビルド・公開します。初回利用前にCloudflare Worker `website` へ `CONTENT_GITHUB_TOKEN` Secretを設定し、`poslindo/website` の `main` ブランチにContentsを書き込める権限を付与してください（設定コマンド：`npx wrangler secret put CONTENT_GITHUB_TOKEN`）。Cloudflare Accessのアプリには `/admin/*` と `/api/admin/*` を含め、許可する編集者だけを登録します。
 
 ## 1. ブランチを作る
 
