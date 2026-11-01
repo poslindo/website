@@ -73,6 +73,8 @@ CloudflareダッシュボードのWorker `website` → **Settings → Build** �
 
 `wrangler.jsonc` は静的ファイルの場所を `_site` に指定し、PRプレビュー用の `previews` ブロックを含めます。`npx wrangler preview` はこのブロックを必要とします。
 
+既に作成済みのプレビューはPreview Baseの変更を引き継がない場合があります。その場合はWorkerの環境選択で該当ブランチを選び、**Settings → Build** のBuild commandにも `npm run build` を設定します。
+
 ## エラー時
 
 - ビルドが止まる：CloudflareのBuild logで最初のエラーを読み、ローカルの `npm run build` で再現します。
