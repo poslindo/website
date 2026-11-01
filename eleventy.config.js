@@ -2,6 +2,7 @@
 export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("circle.css");
   eleventyConfig.addPassthroughCopy("circle-src/site.js");
+  eleventyConfig.addPassthroughCopy("circle-src/admin-board.js");
   eleventyConfig.addPassthroughCopy({ "ramen-src": "ramen" });
 
   return {
