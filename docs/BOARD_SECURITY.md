@@ -20,9 +20,24 @@ npx wrangler deploy
 
 **注意:** このPRのマージだけでは、SecretsやR2は作成されない。R2のバケットが存在しない状態ではデプロイが失敗する可能性がある。Cronは毎日18:00 UTC（03:00 JST）にWorkerの `scheduled` を起動する。Workers の Cron 設定が反映されていることを確認する。
 
+## ブラウザ管理画面とCloudflare Access（必須）
+
+管理画面は `https://poslin.org/admin/board/`。公開画面では「削除（非公開）」と「復元して再公開」を切り替える。投稿は物理削除しない。
+
+Cloudflare Zero Trust → Access → Applications → Add an application → Self-hosted から、次の**2つのパス**に管理者本人のメールアドレスだけを許可するAccessポリシーを設定する。
+
+- `poslin.org/admin/*`
+- `poslin.org/api/admin/*`
+
+できればメールOTPまたは既存の認証プロバイダーを使用する。**Allow Everyoneは使用しない。**
+Accessアプリケーションの **AUD (Application Audience Tag)** を取得してWorkersの `ACCESS_AUD` に、チームドメイン `https://<team>.cloudflareaccess.com` を `ACCESS_TEAM_DOMAIN` に設定する。
+アプリを2つに分けた場合は、API用AccessアプリのAUDを使う。WorkerはAPIリクエストのAccess JWTのRS256署名、aud、iss、有効期限を検証するため、Cloudflare Access未設定では管理APIを使用できない。管理画面にはトークンを入力する必要はない。
+
+**本番デプロイ前にCloudflare Accessを設定すること。** 管理画面HTML自体は静的ファイルなので、AccessポリシーなしではURLを知っている人に表示される。ただしAPIの保護はWorker側でも必須検証され、投稿データ・操作は拒否される。
+
 ## 管理者API
 
-Bearerトークンはブラウザに埋め込まない。管理端末からのみ送る。
+ブラウザ管理画面はCloudflare Accessのログインで使う。以下のBearerトークンは定期バックアップ処理・手動復旧など保守用で、ブラウザには埋め込まない。通常の外部API呼び出しはCloudflare Access JWT検証が必須。バックアップ用の内部呼び出しではBearerを使用する。
 
 ```sh
 export BASE=https://poslin.org
@@ -37,7 +52,7 @@ curl -X POST "$BASE/api/admin/board" \
   -d '{"id":123,"action":"hide"}'
 ```
 
-`action` は `hide`, `show`, `delete`。削除は復元可能なバックアップがない限り元に戻せない。管理APIの一覧には非表示投稿も含まれる。公開の `/api/board` は非表示を除外し最新50件だけを返すが、保存した投稿は50件を超えても自動削除しない。
+`action` は `hide`, `show`, `delete`。`delete` は論理削除（非公開化）の別名であり物理削除しない。`show` で元に戻せる。管理APIの一覧には非表示投稿も含まれる。公開の `/api/board` は非表示を除外し最新50件だけを返すが、保存した投稿は50件を超えても自動削除しない。
 
 ## バックアップと復旧
 
