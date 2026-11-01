@@ -8,6 +8,7 @@ backLabel: 掲示板管理へ
 ---
 
 <p>分類フォルダーを選び、タイトル・ファイル名・本文を入力して保存します。保存するとサイトに反映されます。</p>
+<div class="content-editor-workspace">
 <form id="content-form" class="content-editor">
   <label>分類（保存先フォルダー）
     <select id="content-category" required>
@@ -33,5 +34,16 @@ backLabel: 掲示板管理へ
   <p>ルビは <code>{漢字|かんじ}</code>、画像は <code>![説明](https://...)</code> で書けます。行頭の全角スペースは字下げとして残ります。</p>
   <button type="submit" id="content-save">保存して公開</button>
 </form>
+<section class="content-preview-panel" aria-label="記事プレビューとサンプル">
+  <h2>記事のプレビュー</h2>
+  <iframe id="content-preview" title="記事のプレビュー" sandbox></iframe>
+  <details open>
+    <summary>編集用サンプルMarkdown原文</summary>
+    <p><button type="button" id="content-use-sample">サンプルを本文に入れる</button></p>
+    <p><a href="/markdown-editor-sample.md.txt" download>サンプルファイルをダウンロード</a></p>
+    <pre id="content-sample-source">サンプルを読み込み中…</pre>
+  </details>
+</section>
+</div>
 <p id="content-status" role="status" aria-live="polite"></p>
 <script src="/admin-content.js" defer></script>

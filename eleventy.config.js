@@ -17,6 +17,7 @@ export default function (eleventyConfig) {
   eleventyConfig.addPassthroughCopy("circle-src/site.js");
   eleventyConfig.addPassthroughCopy("circle-src/admin-board.js");
   eleventyConfig.addPassthroughCopy("circle-src/admin-content.js");
+  eleventyConfig.addPassthroughCopy({ "circle-src/markdown-editor-sample.md.txt": "markdown-editor-sample.md.txt" });
   eleventyConfig.addPassthroughCopy({ "ramen-src": "ramen" });
 
   for (const category of ["about", "event", "member", "document"]) {

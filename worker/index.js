@@ -1,7 +1,9 @@
 import { DurableObject } from "cloudflare:workers";
 import { decodeArticleTitle, encodeArticleTitle, stripArticleTitle } from "../scripts/article-title.mjs";
+import { createMarkdown } from "../scripts/markdown.mjs";
 
 const json = (data, status = 200) => Response.json(data, { status });
+const articleMarkdown = createMarkdown();
 const LIMIT_WINDOW_MS = 10 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
 const encoder = new TextEncoder();
@@ -92,6 +94,17 @@ async function contentApi(request, env, url) {
     return json({ ok: true, url: `/${selectedCategory}/${name}/` });
   }
   return json({ error: "Method not allowed" }, 405);
+}
+async function previewApi(request) {
+  let data;
+  try {
+    if (Number(request.headers.get("Content-Length") || 0) > 300_000) return json({ error: "本文が長すぎます。" }, 413);
+    data = await request.json();
+  } catch { return json({ error: "入力内容を読み取れませんでした。" }, 400); }
+  if (typeof data?.title !== "string" || data.title.length > 150 || /[\r\n]/.test(data.title) ||
+      typeof data.body !== "string" || new TextEncoder().encode(data.body).length > 250_000)
+    return json({ error: "タイトルと本文を確認してください。" }, 400);
+  return json({ html: articleMarkdown.render(data.body) });
 }
 
 function decodeJwtPart(part) {
@@ -202,6 +215,7 @@ export default {
       forwarded = new Request(request, { headers });
       if (request.method === "POST" && request.headers.get("Origin") !== url.origin)
         return noStore(json({ error: "Invalid Origin" }, 403));
+      if (url.pathname === "/api/admin/content/preview") return noStore(await previewApi(request));
       if (url.pathname === "/api/admin/content") return noStore(await contentApi(request, env, url));
     }
     const id = env.SITE_STATE.idFromName("site-state");

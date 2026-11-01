@@ -9,6 +9,7 @@ const articlePages = ["document/markdown-sample/index.html", "document/MAFUYU/in
 const ramenFiles = ["ramen/index.html", "ramen/ramen.css", "ramen/ramen-hero.jpg", "ramen/interior.jpg"];
 for (const file of ramenFiles) assert.ok(existsSync(join(output, file)), `Missing ramen file: ${file}`);
 assert.ok(existsSync(join(output, "site.js")), "Missing site.js");
+assert.ok(existsSync(join(output, "markdown-editor-sample.md.txt")), "Missing Markdown editor sample source");
 
 for (const file of [...circlePages, ...articlePages, "ramen/index.html"]) {
   const html = readFileSync(join(output, file), "utf8");

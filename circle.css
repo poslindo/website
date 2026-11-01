@@ -79,3 +79,8 @@ li { margin: 0.25em 0; }
 .content-editor input, .content-editor select, .content-editor textarea { box-sizing: border-box; width: 100%; padding: .5rem; font: inherit; }
 .content-editor textarea { font-family: ui-monospace, Consolas, monospace; line-height: 1.6; }
 .content-editor button { justify-self: start; padding: .5rem 1rem; font: inherit; }
+.content-editor-workspace { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 1rem; }
+.content-preview-panel { min-width: 0; }
+.content-preview-panel iframe { box-sizing: border-box; width: 100%; min-height: 32rem; border: 1px solid #aaa9a1; background: #fff; }
+.content-preview-panel pre { max-height: 24rem; overflow: auto; padding: .75rem; background: #f7f7f2; white-space: pre-wrap; }
+@media (max-width: 850px) { .content-editor-workspace { grid-template-columns: 1fr; } }

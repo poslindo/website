@@ -5,6 +5,9 @@ const title = document.querySelector("#content-title");
 const filename = document.querySelector("#content-filename");
 const body = document.querySelector("#content-body");
 const image = document.querySelector("#content-image");
+const preview = document.querySelector("#content-preview");
+const sampleSource = document.querySelector("#content-sample-source");
+const useSample = document.querySelector("#content-use-sample");
 const save = document.querySelector("#content-save");
 const status = document.querySelector("#content-status");
 
@@ -26,11 +29,33 @@ async function loadFiles() {
   for (const file of files) existing.add(new Option(file, file));
 }
 
+let sample = "";
+let previewTimer;
+let previewController;
+async function renderPreview(titleText, bodyText) {
+  previewController?.abort();
+  previewController = new AbortController();
+  const result = await request("/api/admin/content/preview", {
+    method: "POST",
+    signal: previewController.signal,
+    body: JSON.stringify({ title: titleText || "記事タイトル", body: bodyText }),
+  });
+  const escapedTitle = (titleText || "記事タイトル").replace(/[&<>\"]/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[char]);
+  preview.srcdoc = `<!doctype html><html lang="ja"><head><meta charset="utf-8"><link rel="stylesheet" href="/circle.css"></head><body><h1>${escapedTitle}</h1><hr>${result.html}</body></html>`;
+}
+function schedulePreview() {
+  clearTimeout(previewTimer);
+  previewTimer = setTimeout(() => renderPreview(title.value, body.value).catch(error => {
+    if (error.name !== "AbortError") status.textContent = "プレビューを更新できませんでした。";
+  }), 250);
+}
+
 async function loadArticle() {
   if (!existing.value) {
     title.value = "";
     filename.value = "";
     body.value = "";
+    schedulePreview();
     return;
   }
   const query = new URLSearchParams({ category: category.value, filename: existing.value });
@@ -38,12 +63,14 @@ async function loadArticle() {
   title.value = article.title;
   filename.value = article.filename;
   body.value = article.body;
+  schedulePreview();
 }
 
 category.addEventListener("change", () => {
   title.value = "";
   filename.value = "";
   body.value = "";
+  schedulePreview();
   loadFiles().catch(error => { status.textContent = error.message; });
 });
 image.addEventListener("click", () => {
@@ -62,6 +89,16 @@ image.addEventListener("click", () => {
   const start = body.selectionStart;
   body.setRangeText(markdown, start, body.selectionEnd, "end");
   body.focus();
+  schedulePreview();
+});
+title.addEventListener("input", schedulePreview);
+body.addEventListener("input", schedulePreview);
+useSample.addEventListener("click", () => {
+  body.value = sample;
+  title.value = "Markdown記事のサンプル";
+  filename.value = "";
+  existing.value = "";
+  schedulePreview();
 });
 existing.addEventListener("change", () => loadArticle().catch(error => { status.textContent = error.message; }));
 form.addEventListener("submit", async event => {
@@ -85,3 +122,11 @@ form.addEventListener("submit", async event => {
 });
 
 loadFiles().catch(error => { status.textContent = error.message; });
+fetch("/markdown-editor-sample.md.txt", { cache: "no-store" }).then(response => {
+  if (!response.ok) throw new Error();
+  return response.text();
+}).then(source => {
+  sample = source;
+  sampleSource.textContent = source;
+  renderPreview("Markdown記事のサンプル", sample).catch(() => { status.textContent = "サンプルのプレビューを表示できませんでした。"; });
+}).catch(() => { sampleSource.textContent = "サンプルを読み込めませんでした。"; });

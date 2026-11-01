@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
 import { createMarkdown } from "./markdown.mjs";
 import { decodeArticleTitle, encodeArticleTitle } from "./article-title.mjs";
 
@@ -17,3 +18,7 @@ const titledHtml = markdown.render(titled);
 assert.doesNotMatch(titledHtml, /article-title/);
 assert.match(titledHtml, /<h1>本文の見出し<\/h1>/);
 assert.match(titledHtml, /<h1>もうひとつの見出し<\/h1>/);
+const sampleSource = readFileSync("circle-src/markdown-editor-sample.md.txt", "utf8");
+const sampleHtml = markdown.render(sampleSource);
+assert.match(sampleHtml, /<ruby>京都<rt>きょうと<\/rt><\/ruby>/);
+assert.match(sampleHtml, /<img src="\/ramen\/ramen-hero.jpg" alt="中華そばの写真">/);
