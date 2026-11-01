@@ -199,7 +199,8 @@ export default {
         "script-src 'self'" + (ramenPage ? " 'unsafe-inline'" : "") + " https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
         "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/",
         "connect-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
-        "style-src 'self' 'unsafe-inline'",
+        "style-src 'self' 'unsafe-inline'" + (url.pathname === "/admin/content/" ? " https://fonts.googleapis.com" : ""),
+        "font-src 'self'" + (url.pathname === "/admin/content/" ? " https://fonts.gstatic.com" : ""),
         "img-src 'self' data: https: https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
       ].join("; "));
       return new Response(response.body, { status: response.status, headers });

@@ -90,7 +90,7 @@ body:has(.content-editor-shell) { max-width: 86rem; }
 .content-editor-workspace { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(22rem, .8fr); gap: 1.25rem; align-items: start; }
 .content-write-panel, .content-preview-panel { min-width: 0; }
 .content-markdown-toolbar { display: flex; flex-wrap: wrap; gap: .4rem; margin-bottom: .6rem; }
-.content-body-label textarea { min-height: min(66vh, 54rem); resize: vertical; font-family: inherit; line-height: 1.8; }
+.content-body-label textarea { min-height: min(66vh, 54rem); resize: vertical; font-family: "BIZ UDGothic", monospace; line-height: 1.8; }
 .content-preview-panel h2 { margin-top: 0; }
 .content-preview-panel iframe { box-sizing: border-box; width: 100%; min-height: min(72vh, 60rem); border: 1px solid #aaa9a1; background: #fff; }
 #content-preview-error { padding: .6rem; border-left: 4px solid #b22222; background: #fff0ee; color: #761b15; }
