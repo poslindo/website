@@ -3,3 +3,4 @@ _site/
 /circle-src/**/*.html
 .dev.vars*
 !.dev.vars.example
+wrangler.jsonc
