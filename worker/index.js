@@ -63,7 +63,27 @@ export default {
   },
   async fetch(request, env) {
     const url = new URL(request.url);
-    if (!url.pathname.startsWith("/api/")) return env.ASSETS.fetch(request);
+    if (!url.pathname.startsWith("/api/")) {
+      const response = await env.ASSETS.fetch(request);
+      const headers = new Headers(response.headers);
+      headers.set("X-Content-Type-Options", "nosniff");
+      headers.set("Referrer-Policy", "strict-origin-when-cross-origin");
+      headers.set("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+      headers.set("X-Frame-Options", "DENY");
+      headers.set("Content-Security-Policy", [
+        "default-src 'self'",
+        "base-uri 'self'",
+        "object-src 'none'",
+        "frame-ancestors 'none'",
+        "form-action 'self'",
+        "script-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+        "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/",
+        "connect-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
+        "style-src 'self' 'unsafe-inline'",
+        "img-src 'self' data: https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
+      ].join("; "));
+      return new Response(response.body, { status: response.status, headers });
+    }
     if (request.method !== "GET" && request.method !== "POST") return json({ error: "Method not allowed" }, 405);
     const id = env.SITE_STATE.idFromName("site-state");
     const response = await env.SITE_STATE.get(id).fetch(request);
