@@ -1,0 +1,11 @@
+---
+layout: layouts/circle.njk
+title: ドキュメント
+section: ドキュメント
+permalink: /document/
+backUrl: /
+backLabel: トップに戻る
+---
+
+<p>説明書や記録をまとめています。</p>
+<ul>{% for article in collections.content_document %}<li><a href="{{ article.url }}">{{ article.data.title }}</a></li>{% endfor %}</ul>

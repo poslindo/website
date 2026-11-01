@@ -7,6 +7,8 @@
     "RECAPTCHA_SITE_KEY": "6LfX9gouAAAAANB7WVugr1lqUKs0FEDceC0NEaLY", 
     "ACCESS_AUD": "7f96940ef95bb7c4f246b1dfc607ac1fbc6884122291c794974b28e81984f1de",
     "ACCESS_TEAM_DOMAIN": "https://usuiensan.cloudflareaccess.com",
+    "CONTENT_REPOSITORY": "poslindo/website",
+    "CONTENT_BRANCH": "main",
   },
   "assets": {
     "directory": "./_site",

@@ -11,7 +11,7 @@ backLabel: トップに戻る
 
 <h2>個人ページ</h2>
 <ul>
-  <li><a href="/member/HCL/">うすいえんさん</a></li>
+  {% for article in collections.content_member %}<li><a href="{{ article.url }}">{{ article.data.title }}</a></li>{% endfor %}
 
 </ul>
 

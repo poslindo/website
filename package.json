@@ -4,11 +4,13 @@
   "type": "module",
   "scripts": {
     "build": "eleventy && node scripts/verify.mjs",
+    "test:markdown": "node scripts/test-markdown.mjs",
     "dev": "npm run build && wrangler dev --port 8080",
     "dev:static": "eleventy --serve"
   },
   "devDependencies": {
     "@11ty/eleventy": "^3.1.2",
+    "markdown-it": "^14.3.3",
     "wrangler": "^4.156.0"
   }
 }

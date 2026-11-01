@@ -74,3 +74,8 @@ li { margin: 0.25em 0; }
 .contact-address { font-size: 1.2em; font-weight: bold; }
 .board-honeypot { position: absolute; left: -10000px; width: 1px; height: 1px; overflow: hidden; }
 .board-form button:disabled { cursor: not-allowed; opacity: 0.6; }
+.content-editor { display: grid; gap: .8rem; max-width: 48rem; }
+.content-editor label { display: grid; gap: .25rem; }
+.content-editor input, .content-editor select, .content-editor textarea { box-sizing: border-box; width: 100%; padding: .5rem; font: inherit; }
+.content-editor textarea { font-family: ui-monospace, Consolas, monospace; line-height: 1.6; }
+.content-editor button { justify-self: start; padding: .5rem 1rem; font: inherit; }

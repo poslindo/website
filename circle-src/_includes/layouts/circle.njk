@@ -14,7 +14,7 @@
 <hr>
 {{ content | safe }}
 <hr>
-<p><a href="{{ backUrl }}">{{ backLabel }}</a></p>
+<p><a href="{{ backUrl or '/' }}">{{ backLabel or 'トップへ戻る' }}</a></p>
 {% include "partials/footer.njk" %}
 </body>
 </html>

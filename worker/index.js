@@ -1,4 +1,5 @@
 import { DurableObject } from "cloudflare:workers";
+import { decodeArticleTitle, encodeArticleTitle, stripArticleTitle } from "../scripts/article-title.mjs";
 
 const json = (data, status = 200) => Response.json(data, { status });
 const LIMIT_WINDOW_MS = 10 * 60 * 1000;
@@ -24,6 +25,74 @@ const noStore = response => {
   headers.set("Cache-Control", "no-store");
   return new Response(response.body, { status: response.status, headers });
 };
+const contentCategories = new Set(["about", "event", "member", "document"]);
+const contentFilename = value => typeof value === "string" && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value) && value !== "index";
+const githubHeaders = token => ({
+  "Authorization": `Bearer ${token}`,
+  "Accept": "application/vnd.github+json",
+  "X-GitHub-Api-Version": "2022-11-28",
+});
+async function contentApi(request, env, url) {
+  const repository = env.CONTENT_REPOSITORY;
+  const branch = env.CONTENT_BRANCH || "main";
+  if (!env.CONTENT_GITHUB_TOKEN || !/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repository || ""))
+    return json({ error: "記事編集のGitHub設定がありません。管理者に連絡してください。" }, 503);
+  const queryCategory = request.method === "POST" ? null : url.searchParams.get("category");
+  let data;
+  if (request.method === "POST") {
+    try {
+      if (Number(request.headers.get("Content-Length") || 0) > 300_000) return json({ error: "本文が長すぎます。" }, 413);
+      data = await request.json();
+    } catch { return json({ error: "入力内容を読み取れませんでした。" }, 400); }
+  }
+  const selectedCategory = data?.category || queryCategory;
+  if (!contentCategories.has(selectedCategory)) return json({ error: "分類が正しくありません。" }, 400);
+  const api = `https://api.github.com/repos/${repository}/contents/`;
+  const headers = githubHeaders(env.CONTENT_GITHUB_TOKEN);
+  const path = `circle-src/${selectedCategory}`;
+  if (request.method === "GET" && !url.searchParams.has("filename")) {
+    const response = await fetch(`${api}${path}?ref=${encodeURIComponent(branch)}`, { headers });
+    if (!response.ok) return json({ error: "記事一覧を取得できませんでした。" }, response.status === 404 ? 404 : 502);
+    const files = (await response.json()).filter(item => item.type === "file" && item.name.endsWith(".md"))
+      .map(item => item.name.slice(0, -3)).filter(contentFilename);
+    return json({ files });
+  }
+  if (request.method === "GET") {
+    const name = url.searchParams.get("filename");
+    if (!contentFilename(name)) return json({ error: "ファイル名が正しくありません。" }, 400);
+    const response = await fetch(`${api}${path}/${name}.md?ref=${encodeURIComponent(branch)}`, { headers });
+    if (!response.ok) return json({ error: "記事を読み込めませんでした。" }, response.status === 404 ? 404 : 502);
+    const file = await response.json();
+    const source = new TextDecoder().decode(Uint8Array.from(atob(file.content.replace(/\s/g, "")), char => char.charCodeAt(0)));
+    return json({ filename: name, title: decodeArticleTitle(source) || name, body: stripArticleTitle(source) });
+  }
+  if (request.method === "POST") {
+    const { filename: name, title, body } = data || {};
+    if (!contentFilename(name) || typeof title !== "string" || !title.trim() || title.length > 150 || /[\r\n]/.test(title) ||
+      typeof body !== "string" || new TextEncoder().encode(body).length > 250_000)
+      return json({ error: "タイトル、ファイル名、本文を確認してください。" }, 400);
+    const content = `<!-- article-title: ${encodeArticleTitle(title.trim())} -->\n\n${body.replace(/\s+$/, "")}\n`;
+    const filePath = `${path}/${name}.md`;
+    const route = await fetch(`${api}${path}/${name}?ref=${encodeURIComponent(branch)}`, { headers });
+    if (route.ok) return json({ error: "同じURLになるフォルダーがすでにあります。別のファイル名を選んでください。" }, 409);
+    if (route.status !== 404) return json({ error: "記事URLの重複を確認できませんでした。" }, 502);
+    const existing = await fetch(`${api}${filePath}?ref=${encodeURIComponent(branch)}`, { headers });
+    let sha;
+    if (existing.ok) sha = (await existing.json()).sha;
+    else if (existing.status !== 404) return json({ error: "既存記事を確認できませんでした。" }, 502);
+    const bytes = new TextEncoder().encode(content);
+    let binary = "";
+    for (const byte of bytes) binary += String.fromCharCode(byte);
+    const saved = await fetch(api + filePath, {
+      method: "PUT",
+      headers: { ...headers, "Content-Type": "application/json" },
+      body: JSON.stringify({ message: `記事を更新: ${name}`, content: btoa(binary), branch, ...(sha ? { sha } : {}) }),
+    });
+    if (!saved.ok) return json({ error: "GitHubへの保存に失敗しました。少し待って再度お試しください。" }, 502);
+    return json({ ok: true, url: `/${selectedCategory}/${name}/` });
+  }
+  return json({ error: "Method not allowed" }, 405);
+}
 
 function decodeJwtPart(part) {
   const base64 = part.replace(/-/g, "+").replace(/_/g, "/");
@@ -118,7 +187,7 @@ export default {
         "frame-src https://www.google.com/recaptcha/ https://recaptcha.google.com/recaptcha/",
         "connect-src 'self' https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/",
         "style-src 'self' 'unsafe-inline'",
-        "img-src 'self' data: https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
+        "img-src 'self' data: https: https://www.google.com/recaptcha/ https://www.gstatic.com/recaptcha/"
       ].join("; "));
       return new Response(response.body, { status: response.status, headers });
     }
@@ -133,6 +202,7 @@ export default {
       forwarded = new Request(request, { headers });
       if (request.method === "POST" && request.headers.get("Origin") !== url.origin)
         return noStore(json({ error: "Invalid Origin" }, 403));
+      if (url.pathname === "/api/admin/content") return noStore(await contentApi(request, env, url));
     }
     const id = env.SITE_STATE.idFromName("site-state");
     const response = await env.SITE_STATE.get(id).fetch(forwarded);

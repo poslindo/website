@@ -8,16 +8,25 @@
 | --- | --- |
 | ぽすりん堂トップ | `circle-src/index.njk` |
 | 共通メニュー・レイアウト | `circle-src/_includes/partials/nav.njk`、`circle-src/_includes/layouts/circle.njk` |
-| 案内・メンバー・イベント | `circle-src/about/`、`circle-src/member/`、`circle-src/event/` |
+| 案内・メンバー・イベント・ドキュメント | `circle-src/about/`、`circle-src/member/`、`circle-src/event/`、`circle-src/document/` |
 | ぽすりん堂のCSS | `circle.css` |
 | ぽす鈴のページ・CSS・画像 | `ramen-src/` |
 | 掲示板・カウンター処理 | `worker/index.js`、`circle-src/site.js` |
+| Markdown記事の編集 | `/admin/content/`（Cloudflare Access認証後） |
 | 連絡先 | `circle-src/contact/index.njk` |
 | Cloudflare Workers設定 | `wrangler.jsonc` |
 
 トップページのカウンターは、同じブラウザーからのアクセスを24時間に1回だけ数えます。ブラウザーの保存データを消した場合や別のブラウザーでは、新しい訪問として数えます。
 
 `.njk` の先頭の `---` で囲まれた部分はページ設定です。公開URLを変えるとき以外は残します。CSSや写真を変更したら、HTML/CSS内のファイル名と保存名が一致することを確認します。
+
+## Markdown記事の編集画面
+
+`/admin/board/` の「記事を編集する」から、案内・イベント・ユーザー・ドキュメントのMarkdown記事を作成・編集できます。分類で保存先フォルダーを選び、タイトルと英小文字のファイル名を入力します。記事本文にYAML設定はありません。タイトルは画面で別に入力してMarkdownファイル内の非表示コメントに保存し、本文中の複数の`#`見出しはそのまま表示します。
+
+本文はでんでんマークダウンに合わせ、行内改行、全角スペースの字下げ、`{漢字|かんじ}`のルビ記法、`![説明](https://example.com/image.jpg)`の画像URL記法を使えます。記事URLは分類とファイル名から決まります（例：`event/autumn-meetup.md` → `/event/autumn-meetup/`）。
+
+初回利用前にCloudflare Worker `website` へ `CONTENT_GITHUB_TOKEN` Secretを設定し、`poslindo/website` の `main` ブランチにContentsを書き込める権限を付与してください（設定コマンド：`npx wrangler secret put CONTENT_GITHUB_TOKEN`）。GitHubへの保存で `main` が更新されるとWorkers Buildsが再ビルド・公開します。Cloudflare Accessのアプリには `/admin/*` と `/api/admin/*` を含め、許可する編集者だけを登録します。
 
 ## 1. ブランチを作る
 

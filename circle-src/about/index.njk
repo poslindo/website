@@ -22,7 +22,7 @@ permalink: /about/
 <h2>各ページ</h2>
 <ul>
   <li><a href="/member/">構成員一覧</a></li>
-  <li><a href="/member/MAFUYU/">真冬</a></li>
+  <li><a href="/document/MAFUYU/">真冬</a></li>
   <li><a href="/event/">イベント一覧</a></li>
   <li><a href="/event/2026IYA/">2026年 IYA合同</a></li>
 </ul>
@@ -30,3 +30,7 @@ permalink: /about/
 <h2>更新履歴</h2>
 <p>2026/10/25　ページを開設しました。</p>
 <p class="box">ここは各自が少しずつ手を入れる場所です。リンクが増えたり、見た目が変わったりするかもしれません。</p>
+{% if collections.content_about.length %}
+<h2>案内の記事</h2>
+<ul>{% for article in collections.content_about %}<li><a href="{{ article.url }}">{{ article.data.title }}</a></li>{% endfor %}</ul>
+{% endif %}
