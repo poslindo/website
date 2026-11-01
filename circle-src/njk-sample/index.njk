@@ -75,9 +75,9 @@ backLabel: トップに戻る
 
 <h2>記号の早見表</h2>
 <ul>
-  <li><code>{{ 値 }}</code>：値を表示する</li>
-  <li><code>{% 命令 %}</code>：条件分岐や繰り返しなどを行う</li>
-  <li><code>{# コメント #}</code>：テンプレート内だけのメモ</li>
+  <li><code>{% raw %}{{ 値 }}{% endraw %}</code>：値を表示する</li>
+  <li><code>{% raw %}{% 命令 %}{% endraw %}</code>：条件分岐や繰り返しなどを行う</li>
+  <li><code>{% raw %}{# コメント #}{% endraw %}</code>：テンプレート内だけのメモ</li>
 </ul>
 
 <p class="box">本文はHTMLで書けます。タイトルや説明など、ページごとに変わる値はfront matterに置くと編集しやすくなります。</p>
