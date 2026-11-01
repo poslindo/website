@@ -15,6 +15,15 @@ permalink: /
   </ul>
 </section>
 
+<section class="box">
+  <h2>最近の更新</h2>
+  <ul class="update-list">
+    {% for item in collections.recentPages %}
+      <li><time datetime="{{ item.date }}">{{ item.label }}</time> <a href="{{ item.url }}">{{ item.title }}</a></li>
+    {% endfor %}
+  </ul>
+</section>
+
 <section class="box counter-box">
   <h2>いらっしゃいませ</h2>
   <p>あなたは <strong id="visit-count">読み込み中</strong> 人目のお客様です。</p>
